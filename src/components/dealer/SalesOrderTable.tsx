@@ -1,11 +1,16 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
-// Giả định component DataTable (chưa được tạo) tự động áp dụng styling Dark Theme
-import { DataTable } from "@/components/ui/data-table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Eye } from "lucide-react";
+import { Eye, CreditCard, CalendarDays, Car } from "lucide-react";
 
 // Định nghĩa Interface (Typescript) cho Đơn hàng
 type SalesOrder = {
@@ -13,7 +18,7 @@ type SalesOrder = {
   customerName: string;
   vehicleModel: string;
   totalAmount: number;
-  paymentStatus: "Pending" | "Paid" | "Installment"; // Trạng thái Thanh toán
+  paymentStatus: "Pending" | "Paid" | "Installment";
   orderDate: string;
 };
 
@@ -43,115 +48,106 @@ const data: SalesOrder[] = [
     paymentStatus: "Pending",
     orderDate: "2025-10-10",
   },
-  {
-    id: "SO004",
-    customerName: "Nguyễn Văn F",
-    vehicleModel: "Model Z City",
-    totalAmount: 600_000_000,
-    paymentStatus: "Paid",
-    orderDate: "2025-10-12",
-  },
-  {
-    id: "SO005",
-    customerName: "Vũ Thị G",
-    vehicleModel: "Model X Standard",
-    totalAmount: 900_000_000,
-    paymentStatus: "Pending",
-    orderDate: "2025-10-15",
-  },
-];
-
-// Định nghĩa Cột
-const columns: ColumnDef<SalesOrder>[] = [
-  { accessorKey: "id", header: "Mã Đơn hàng" },
-  { accessorKey: "customerName", header: "Khách hàng" },
-  { accessorKey: "vehicleModel", header: "Mẫu xe" },
-  {
-    accessorKey: "totalAmount",
-    header: "Tổng tiền (VNĐ)",
-    // Đổi màu tiền tệ cho Dark Theme
-    cell: ({ row }) => (
-      <span className="font-semibold text-emerald-400">
-        {new Intl.NumberFormat("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }).format(row.original.totalAmount)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "paymentStatus",
-    header: "Thanh toán",
-    cell: ({ row }) => {
-      const status = row.original.paymentStatus;
-      let className = "";
-
-      // Áp dụng màu Badge cho Dark Theme
-      if (status === "Pending") {
-        // Chờ xử lý (Amber/Vàng)
-        className = "bg-amber-600/50 text-amber-300 border-amber-600";
-      } else if (status === "Paid") {
-        // Đã thanh toán (Emerald/Xanh lá)
-        className = "bg-emerald-600/50 text-emerald-300 border-emerald-600";
-      } else if (status === "Installment") {
-        // Trả góp (Sky/Xanh dương)
-        className = "bg-sky-600/50 text-sky-300 border-sky-600";
-      }
-
-      return (
-        <Badge variant="outline" className={className}>
-          {status === "Pending"
-            ? "Chờ Thanh toán"
-            : status === "Paid"
-            ? "Đã Thanh toán"
-            : "Trả góp"}
-        </Badge>
-      );
-    },
-  },
-  { accessorKey: "orderDate", header: "Ngày Đặt hàng" },
-  {
-    id: "actions",
-    header: "Hành động",
-    cell: ({ row }) => (
-      <div className="flex space-x-2">
-        {/* Nút Chi tiết - Outline Dark Theme */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-sky-400"
-          onClick={() => console.log(`View Details ${row.original.id}`)}
-        >
-          <Eye className="h-4 w-4 mr-1" />
-          Chi tiết
-        </Button>
-        {/* Nút Quản lý TT - Primary Dark Theme */}
-        <Button
-          size="sm"
-          className="bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={() => console.log(`Manage Payment ${row.original.id}`)}
-          disabled={row.original.paymentStatus === "Paid"}
-        >
-          <CreditCard className="h-4 w-4 mr-1" />
-          Quản lý TT
-        </Button>
-      </div>
-    ),
-  },
 ];
 
 export function SalesOrderTable() {
   return (
-    // Đảm bảo DataTable được đặt trong môi trường Dark Theme
-    <div className="space-y-4">
-      <DataTable
-        columns={columns}
-        data={data}
-        searchColumn="customerName"
-        searchPlaceholder="Tìm kiếm theo tên khách hàng hoặc mã đơn..."
-        // Giả định DataTable component sẽ tự động xử lý màu sắc table, header, và search input
-        // dựa trên các props được truyền và theme bao quanh.
-      />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {data.map((order) => {
+        let badgeClass = "";
+        let badgeText = "";
+
+        if (order.paymentStatus === "Pending") {
+          badgeClass =
+            "bg-yellow-500 text-white border-yellow-600 hover:bg-yellow-600";
+          badgeText = "Chờ Thanh toán";
+        } else if (order.paymentStatus === "Paid") {
+          badgeClass =
+            "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700";
+          badgeText = "Đã Thanh toán";
+        } else if (order.paymentStatus === "Installment") {
+          badgeClass =
+            "bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700";
+          badgeText = "Trả góp";
+        }
+
+        return (
+          <Card
+            key={order.id}
+            className="bg-gray-800 border-gray-700 hover:border-sky-500 transition-colors shadow-lg"
+          >
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                {/* Tiêu đề */}
+                <CardTitle className="text-xl text-gray-50">
+                  {order.customerName}
+                </CardTitle>
+
+                {/* Badge Status */}
+                <Badge className={`${badgeClass} font-semibold`}>
+                  {badgeText}
+                </Badge>
+              </div>
+
+              <CardDescription className="text-gray-400">
+                Mã đơn: {order.id}
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-3">
+              {/* Mẫu xe */}
+              <div className="flex items-center text-sm text-gray-300">
+                <Car className="mr-2 h-4 w-4 text-sky-400" />
+                <span className="font-semibold text-gray-200">
+                  Mẫu xe:
+                </span>{" "}
+                {order.vehicleModel}
+              </div>
+
+              {/* Tổng tiền */}
+              <div className="flex items-center text-sm text-gray-300">
+                <CreditCard className="mr-2 h-4 w-4 text-emerald-400" />
+                <span className="font-semibold text-gray-200">
+                  Tổng tiền:
+                </span>{" "}
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(order.totalAmount)}
+              </div>
+
+              {/* Ngày đặt hàng */}
+              <div className="flex items-center text-sm text-gray-300">
+                <CalendarDays className="mr-2 h-4 w-4 text-orange-400" />
+                <span className="font-semibold text-gray-200">
+                  Ngày đặt:
+                </span>{" "}
+                {order.orderDate}
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex justify-between border-t border-gray-700 pt-4">
+              <Button
+                variant="outline"
+                className="border-gray-600 text-sky-400 hover:bg-gray-700 hover:border-sky-500"
+                onClick={() => console.log("Xem chi tiết", order.id)}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Chi tiết
+              </Button>
+
+              <Button
+                className="bg-sky-600 hover:bg-sky-700 text-white"
+                onClick={() => console.log("Quản lý Thanh toán", order.id)}
+                disabled={order.paymentStatus === "Paid"}
+              >
+                <CreditCard className="mr-2 h-4 w-4" />
+                Quản lý TT
+              </Button>
+            </CardFooter>
+          </Card>
+        );
+      })}
     </div>
   );
 }

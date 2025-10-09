@@ -1,11 +1,23 @@
 // src/components/dealer/QuoteTable.tsx
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/ui/data-table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, ArrowRight } from "lucide-react";
+import {
+  Download,
+  ArrowRight,
+  Car,
+  DollarSign,
+  CalendarDays,
+} from "lucide-react";
 
 // Định nghĩa Interface (Typescript)
 type Quote = {
@@ -61,96 +73,104 @@ const data: Quote[] = [
   },
 ];
 
-// Định nghĩa Cột
-const columns: ColumnDef<Quote>[] = [
-  { accessorKey: "id", header: "Mã Báo giá" },
-  { accessorKey: "customerName", header: "Khách hàng" },
-  { accessorKey: "vehicleModel", header: "Mẫu xe" },
-  {
-    accessorKey: "totalPrice",
-    header: "Tổng tiền (VNĐ)",
-    cell: ({ row }) => (
-      // Đổi màu tiền tệ cho Dark Theme
-      <span className="font-semibold text-emerald-400">
-        {new Intl.NumberFormat("vi-VN", {
-          style: "currency",
-          currency: "VND",
-        }).format(row.original.totalPrice)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Trạng thái",
-    cell: ({ row }) => {
-      const status = row.original.status;
-      let className = "";
-
-      // Áp dụng màu Badge cho Dark Theme
-      if (status === "Draft") {
-        // Bản nháp (Gray/Xám)
-        className = "bg-gray-600/50 text-gray-300 border-gray-600";
-      } else if (status === "Sent") {
-        // Đã gửi (Sky/Xanh dương)
-        className = "bg-sky-600/50 text-sky-300 border-sky-600";
-      } else if (status === "Converted") {
-        // Đã chuyển đổi (Emerald/Xanh lá)
-        className = "bg-emerald-600/50 text-emerald-300 border-emerald-600";
-      }
-
-      return (
-        <Badge variant="outline" className={className}>
-          {status === "Draft"
-            ? "Bản nháp"
-            : status === "Sent"
-            ? "Đã gửi"
-            : "Đã chuyển đổi (Thành Đơn hàng)"}
-        </Badge>
-      );
-    },
-  },
-  { accessorKey: "createdAt", header: "Ngày tạo" },
-  {
-    id: "actions",
-    header: "Hành động",
-    cell: ({ row }) => (
-      <div className="flex space-x-2">
-        {/* Nút Tải PDF - Outline Dark Theme */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-indigo-400"
-          onClick={() => console.log(`Download ${row.original.id}`)}
-        >
-          <Download className="h-4 w-4 mr-1" />
-          Tải PDF
-        </Button>
-
-        {/* Nút Lên Đơn - Primary/Success Dark Theme */}
-        {row.original.status !== "Converted" && (
-          <Button
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            onClick={() => console.log(`Convert ${row.original.id}`)}
-          >
-            <ArrowRight className="h-4 w-4 mr-1" />
-            Lên Đơn
-          </Button>
-        )}
-      </div>
-    ),
-  },
-];
-
 export function QuoteTable() {
   return (
-    <div className="space-y-4">
-      <DataTable
-        columns={columns}
-        data={data}
-        searchColumn="customerName" // Cho phép tìm kiếm theo tên khách hàng
-        searchPlaceholder="Tìm kiếm theo tên khách hàng..."
-      />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {data.map((quote) => {
+        let badgeClass = "";
+        let badgeText = "";
+
+        if (quote.status === "Draft") {
+          badgeClass = "bg-gray-600 text-gray-200 border-gray-600";
+          badgeText = "Bản nháp";
+        } else if (quote.status === "Sent") {
+          badgeClass = "bg-sky-600 text-white border-sky-600";
+          badgeText = "Đã gửi";
+        } else if (quote.status === "Converted") {
+          badgeClass = "bg-emerald-600 text-white border-emerald-600";
+          badgeText = "Đã chuyển đổi (Đơn hàng)";
+        }
+
+        return (
+          <Card
+            key={quote.id}
+            className="bg-gray-800 border-gray-700 hover:border-sky-500 transition-colors shadow-lg"
+          >
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                {/* Tiêu đề */}
+                <CardTitle className="text-xl text-gray-50">
+                  {quote.customerName}
+                </CardTitle>
+
+                {/* Badge Status */}
+                <Badge className={`${badgeClass} font-semibold`}>
+                  {badgeText}
+                </Badge>
+              </div>
+
+              <CardDescription className="text-gray-400">
+                Mã báo giá: {quote.id}
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-3">
+              {/* Mẫu xe */}
+              <div className="flex items-center text-sm text-gray-300">
+                <Car className="mr-2 h-4 w-4 text-sky-400" />
+                <span className="font-semibold text-gray-200">
+                  Mẫu xe:
+                </span>{" "}
+                {quote.vehicleModel}
+              </div>
+
+              {/* Giá trị báo giá */}
+              <div className="flex items-center text-sm text-gray-300">
+                <DollarSign className="mr-2 h-4 w-4 text-emerald-400" />
+                <span className="font-semibold text-gray-200">
+                  Giá trị báo giá:
+                </span>{" "}
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(quote.totalPrice)}
+              </div>
+
+              {/* Ngày tạo */}
+              <div className="flex items-center text-sm text-gray-300">
+                <CalendarDays className="mr-2 h-4 w-4 text-orange-400" />
+                <span className="font-semibold text-gray-200">
+                  Ngày tạo:
+                </span>{" "}
+                {quote.createdAt}
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex justify-between border-t border-gray-700 pt-4">
+              {/* Nút tải PDF */}
+              <Button
+                variant="outline"
+                className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-indigo-500 hover:text-indigo-400"
+                onClick={() => console.log("Tải PDF", quote.id)}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Tải PDF
+              </Button>
+
+              {/* Nút Lên đơn (nếu chưa Converted) */}
+              {quote.status !== "Converted" && (
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => console.log("Convert", quote.id)}
+                >
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                  Lên đơn
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        );
+      })}
     </div>
   );
 }

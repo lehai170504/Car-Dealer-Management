@@ -1,4 +1,5 @@
 // src/components/dealer/CustomerTable.tsx
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, Edit, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { CreateCustomerModal } from "@/components/dealer/CreateCustomerModal";
 
 // Dữ liệu mẫu
 interface Customer {
@@ -72,10 +74,12 @@ export function CustomerTable() {
     }
   };
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        {/* Thanh tìm kiếm - Dark Theme */}
+        {/* Search */}
         <div className="relative w-1/3 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
@@ -83,8 +87,11 @@ export function CustomerTable() {
             className="pl-10 bg-gray-700 border-gray-600 text-gray-50 placeholder:text-gray-500 focus:border-sky-500"
           />
         </div>
-        {/* Nút thêm mới (ví dụ) */}
-        <Button className="bg-sky-600 hover:bg-sky-700">
+        {/* Nút thêm khách hàng */}
+        <Button
+          className="bg-sky-600 hover:bg-sky-700"
+          onClick={() => setIsModalOpen(true)}
+        >
           Thêm Khách hàng mới
         </Button>
       </div>
@@ -154,6 +161,12 @@ export function CustomerTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Modal thêm khách hàng */}
+      <CreateCustomerModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

@@ -4,32 +4,32 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useState } from "react";
 
-// Import các component đã được chỉnh sửa Dark Theme
 import { SalesOrderTable } from "@/components/dealer/SalesOrderTable";
 import { QuoteTable } from "@/components/dealer/QuoteTable";
 import { DeliverySchedule } from "@/components/dealer/DeliverySchedule";
+import { CreateSalesModal } from "../../../components/dealer/CreateSalesModal";
 
 export default function SalesPage() {
+  const [openModal, setOpenModal] = useState(false);
+
   return (
-    // Container chính với màu chữ sáng
     <div className="space-y-6 text-gray-100">
-      {/* Header và Nút Tạo Mới */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-50">Quản lý Bán hàng</h1>
-
-        {/* Nút Tạo Mới - Primary Dark Theme */}
         <Button
           className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg"
-          onClick={() => console.log("Tạo Báo giá/Đơn hàng mới")}
+          onClick={() => setOpenModal(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
           Tạo Báo giá/Đơn hàng
         </Button>
       </div>
 
+      {/* Tabs */}
       <Tabs defaultValue="quotes" className="w-full">
-        {/* TABS LIST - Dark Theme */}
         <TabsList className="grid w-full grid-cols-3 bg-gray-700 border border-gray-600">
           <TabsTrigger
             value="quotes"
@@ -51,7 +51,6 @@ export default function SalesPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* TAB: Báo giá */}
         <TabsContent value="quotes" className="pt-4">
           <h2 className="text-xl font-semibold mb-4 text-gray-200">
             Danh sách Báo giá
@@ -59,7 +58,6 @@ export default function SalesPage() {
           <QuoteTable />
         </TabsContent>
 
-        {/* TAB: Đơn hàng */}
         <TabsContent value="orders" className="pt-4">
           <h2 className="text-xl font-semibold mb-4 text-gray-200">
             Danh sách Đơn hàng
@@ -67,7 +65,6 @@ export default function SalesPage() {
           <SalesOrderTable />
         </TabsContent>
 
-        {/* TAB: Giao xe */}
         <TabsContent value="delivery" className="pt-4">
           <h2 className="text-xl font-semibold mb-4 text-gray-200">
             Lịch trình Giao xe
@@ -75,6 +72,9 @@ export default function SalesPage() {
           <DeliverySchedule />
         </TabsContent>
       </Tabs>
+
+      {/* Modal tạo mới */}
+      <CreateSalesModal open={openModal} onClose={() => setOpenModal(false)} />
     </div>
   );
 }

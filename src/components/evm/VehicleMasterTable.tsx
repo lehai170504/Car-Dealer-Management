@@ -1,4 +1,5 @@
-// src/components/evm/VehicleMasterTable.tsx
+"use client";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,10 +10,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, PlusCircle, Search } from "lucide-react"; // Thêm Search
+import { Edit, Trash2, PlusCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { AddVehicleModal } from "./AddVehicleModal";
+import { EditVehicleModal } from "./EditVehicleModal";
+import { DeleteConfirmModal } from "./DeleteConfirmModal";
 
-// Dữ liệu mẫu
 interface VehicleMaster {
   id: string;
   model: string;
@@ -22,7 +25,7 @@ interface VehicleMaster {
   status: string;
 }
 
-const masterVehicles: VehicleMaster[] = [
+const initialVehicles: VehicleMaster[] = [
   {
     id: "M001",
     model: "EV Model X",
@@ -47,79 +50,74 @@ const masterVehicles: VehicleMaster[] = [
     basePrice: "580,000,000",
     status: "Pending",
   },
-  {
-    id: "M004",
-    model: "EV Model Y",
-    version: "Performance",
-    colors: 6,
-    basePrice: "850,000,000",
-    status: "Active",
-  },
 ];
 
 export function EVM_VehicleMasterTable() {
-  const getStatusBadgeClasses = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600";
-      case "Pending":
-        return "bg-yellow-600/50 text-yellow-300 border-yellow-700 hover:bg-yellow-600/70";
-      default:
-        return "bg-gray-700 text-gray-400 border-gray-600";
-    }
+  const [vehicles, setVehicles] = useState(initialVehicles);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleMaster | null>(
+    null
+  );
+
+  const handleAdd = (vehicle: VehicleMaster) =>
+    setVehicles([...vehicles, vehicle]);
+  const handleEdit = (vehicle: VehicleMaster) =>
+    setVehicles(vehicles.map((v) => (v.id === vehicle.id ? vehicle : v)));
+  const handleDelete = () => {
+    if (selectedVehicle)
+      setVehicles(vehicles.filter((v) => v.id !== selectedVehicle.id));
+    setIsDeleteOpen(false);
   };
+
+  const getStatusBadgeClasses = (status: string) =>
+    status === "Active"
+      ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+      : "bg-yellow-600/50 text-yellow-300 border-yellow-700 hover:bg-yellow-600/70";
 
   return (
     <div className="space-y-4">
-      {/* Search Bar và Nút Thêm Mới */}
       <div className="flex justify-between items-center">
         <div className="relative w-full md:w-1/3">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Tìm kiếm theo Model, Phiên bản..."
-            className="pl-10 bg-gray-700 border-gray-600 text-gray-200 placeholder:text-gray-400 focus:border-emerald-500"
+            className="pl-10 bg-gray-700 border-gray-600 text-gray-200"
           />
         </div>
         <Button
-          onClick={() => console.log("Thêm Model mới")}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md"
+          onClick={() => setIsAddOpen(true)}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white"
         >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Thêm Model/Phiên bản
+          <PlusCircle className="mr-2 h-4 w-4" /> Thêm Model/Phiên bản
         </Button>
       </div>
 
-      {/* Table Container với Dark Theme */}
       <div className="border border-gray-600 rounded-lg overflow-hidden">
         <Table>
           <TableHeader className="bg-gray-700/80">
-            <TableRow className="border-gray-600 hover:bg-gray-700/80">
-              <TableHead className="w-[100px] text-gray-200">
-                Mã Model
-              </TableHead>
+            <TableRow>
+              <TableHead className="text-gray-200">Mã Model</TableHead>
               <TableHead className="text-gray-200">Mẫu xe</TableHead>
               <TableHead className="text-gray-200">Phiên bản</TableHead>
-              <TableHead className="text-center text-gray-200">
-                Số lượng Màu
+              <TableHead className="text-gray-200 text-center">
+                Số màu
               </TableHead>
-              <TableHead className="text-right text-gray-200">
-                Giá Cơ bản (VNĐ)
-              </TableHead>
+              <TableHead className="text-gray-200 text-right">Giá</TableHead>
               <TableHead className="text-gray-200">Trạng thái</TableHead>
-              <TableHead className="text-right text-gray-200">
+              <TableHead className="text-gray-200 text-right">
                 Hành động
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {masterVehicles.map((vehicle) => (
+            {vehicles.map((vehicle) => (
               <TableRow
                 key={vehicle.id}
-                className="border-gray-600 hover:bg-gray-700/50 transition-colors"
+                className="border-gray-600 hover:bg-gray-700/50"
               >
-                <TableCell className="font-medium text-gray-200">
-                  {vehicle.id}
-                </TableCell>
+                <TableCell className="text-gray-200">{vehicle.id}</TableCell>
                 <TableCell className="text-gray-300 font-semibold">
                   {vehicle.model}
                 </TableCell>
@@ -129,36 +127,34 @@ export function EVM_VehicleMasterTable() {
                 <TableCell className="text-center text-sky-400">
                   {vehicle.colors}
                 </TableCell>
-                <TableCell className="text-right font-semibold text-emerald-400">
+                <TableCell className="text-right text-emerald-400 font-semibold">
                   {vehicle.basePrice}
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    className={`${getStatusBadgeClasses(
-                      vehicle.status
-                    )} font-semibold`}
-                  >
+                  <Badge className={getStatusBadgeClasses(vehicle.status)}>
                     {vehicle.status === "Active" ? "Hoạt động" : "Chờ duyệt"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right space-x-2">
-                  {/* Button Chỉnh sửa */}
                   <Button
                     variant="outline"
                     size="icon"
-                    className="border-gray-600 text-sky-400 hover:bg-gray-600/50 hover:border-sky-500"
-                    onClick={() => console.log("Chỉnh sửa", vehicle.id)}
-                    title="Chỉnh sửa"
+                    className="text-sky-400 border-gray-600"
+                    onClick={() => {
+                      setSelectedVehicle(vehicle);
+                      setIsEditOpen(true);
+                    }}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  {/* Button Xóa */}
                   <Button
                     variant="outline"
                     size="icon"
-                    className="border-gray-600 text-red-500 hover:bg-gray-600/50 hover:border-red-600"
-                    onClick={() => console.log("Xóa", vehicle.id)}
-                    title="Xóa"
+                    className="text-red-500 border-gray-600"
+                    onClick={() => {
+                      setSelectedVehicle(vehicle);
+                      setIsDeleteOpen(true);
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -168,6 +164,24 @@ export function EVM_VehicleMasterTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Modals */}
+      <AddVehicleModal
+        open={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onSave={handleAdd}
+      />
+      <EditVehicleModal
+        open={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        vehicle={selectedVehicle}
+        onSave={handleEdit}
+      />
+      <DeleteConfirmModal
+        open={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

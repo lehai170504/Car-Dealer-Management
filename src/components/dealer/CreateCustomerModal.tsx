@@ -11,39 +11,68 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import Swal from "sweetalert2";
+import { customerService } from "@/services/customer/customerService";
 
 interface CreateCustomerModalProps {
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void; // callback để reload danh sách
 }
 
 export function CreateCustomerModal({
   open,
   onClose,
+  onSuccess,
 }: CreateCustomerModalProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"Tiềm năng" | "Đã mua" | "Chăm sóc">(
-    "Tiềm năng"
-  );
-  const [source, setSource] = useState("");
+  const [address, setAddress] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    const newCustomer = {
-      id: `KH${Math.floor(Math.random() * 1000)
-        .toString()
-        .padStart(3, "0")}`,
-      name,
-      phone,
-      email,
-      status,
-      source,
-    };
-    console.log("Thêm khách hàng:", newCustomer);
+  const resetForm = () => {
+    setName("");
+    setPhone("");
+    setEmail("");
+    setAddress("");
+    setFeedback("");
+  };
 
-    // Sau này bạn có thể dispatch Redux API call ở đây
-    onClose();
+  const handleSubmit = async () => {
+    if (!name || !phone || !email) {
+      Swal.fire(
+        "Thiếu thông tin",
+        "Vui lòng nhập đủ họ tên, SĐT, email!",
+        "warning"
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const payload = {
+        name,
+        phone,
+        email,
+        address,
+        feedback,
+      };
+
+      await customerService.createCustomer(payload);
+      Swal.fire("Thành công!", "Đã thêm khách hàng mới.", "success");
+
+      resetForm();
+      onClose();
+      onSuccess?.(); // reload danh sách
+    } catch (error: any) {
+      console.error(error);
+      Swal.fire("Lỗi", error?.message || "Không thể tạo khách hàng.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,20 +85,20 @@ export function CreateCustomerModal({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Tên khách hàng */}
+          {/* Họ tên */}
           <div>
-            <label className="block mb-1 text-sm">Tên khách hàng</label>
+            <label className="block mb-1 text-sm">Họ tên</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nhập tên khách hàng"
+              placeholder="Nhập họ tên khách hàng"
               className="bg-gray-700 text-white border-gray-600"
             />
           </div>
 
           {/* Số điện thoại */}
           <div>
-            <label className="block mb-1 text-sm">Điện thoại</label>
+            <label className="block mb-1 text-sm">Số điện thoại</label>
             <Input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -90,29 +119,24 @@ export function CreateCustomerModal({
             />
           </div>
 
-          {/* Trạng thái */}
+          {/* Địa chỉ */}
           <div>
-            <label className="block mb-1 text-sm">Trạng thái</label>
-            <select
-              value={status}
-              onChange={(e) =>
-                setStatus(e.target.value as "Tiềm năng" | "Đã mua" | "Chăm sóc")
-              }
-              className="w-full bg-gray-700 border border-gray-600 rounded p-2"
-            >
-              <option value="Tiềm năng">Tiềm năng</option>
-              <option value="Đã mua">Đã mua</option>
-              <option value="Chăm sóc">Chăm sóc</option>
-            </select>
+            <label className="block mb-1 text-sm">Địa chỉ</label>
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Nhập địa chỉ"
+              className="bg-gray-700 text-white border-gray-600"
+            />
           </div>
 
-          {/* Nguồn */}
+          {/* Feedback */}
           <div>
-            <label className="block mb-1 text-sm">Nguồn</label>
+            <label className="block mb-1 text-sm">Ghi chú / Phản hồi</label>
             <Input
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              placeholder="VD: Website, Facebook Ads..."
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Nhập phản hồi (nếu có)"
               className="bg-gray-700 text-white border-gray-600"
             />
           </div>
@@ -123,14 +147,16 @@ export function CreateCustomerModal({
             variant="outline"
             onClick={onClose}
             className="border-gray-500 text-gray-300"
+            disabled={loading}
           >
             Hủy
           </Button>
           <Button
             onClick={handleSubmit}
+            disabled={loading}
             className="bg-sky-600 hover:bg-sky-700 text-white"
           >
-            Lưu
+            {loading ? "Đang lưu..." : "Lưu"}
           </Button>
         </DialogFooter>
       </DialogContent>

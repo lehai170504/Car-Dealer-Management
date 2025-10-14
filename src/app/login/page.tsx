@@ -12,14 +12,9 @@ import {
 } from "@/components/ui/card";
 import { Mail, Lock, Zap, CornerRightUp } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-// === Import các hàm và Types từ Service API ===
-// Thay đổi đường dẫn import cho phù hợp với cấu trúc project của bạn
-import { login } from "@/services/auth/authService";
+import { useLogin } from "@/hooks/useAuth";
 import { LoginCredentials } from "@/types/auth";
-// ===============================================
+import { useState } from "react";
 
 // Logic ảo ảnh cho phần Branding
 const TechOverlay = () => (
@@ -43,16 +38,12 @@ const TechOverlay = () => (
 );
 
 export default function LoginPage() {
-  const router = useRouter();
-
+  const { isLoading, error, loginUser } = useLogin();
   // ĐÃ CẬP NHẬT: Khởi tạo email và password là chuỗi rỗng
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: "",
     password: "",
   });
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCredentials({
@@ -64,34 +55,8 @@ export default function LoginPage() {
   // === HÀM XỬ LÝ ĐĂNG NHẬP THỰC TẾ ===
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const response = await login(credentials);
-      const userRole = response.user.role;
-
-      if (userRole === "Admin") {
-        router.push("/evm/dashboard");
-      } else if (userRole === "Dealer Manager") {
-        router.push("/dealer/dashboard");
-      } else {
-        setError(
-          "Đăng nhập thành công nhưng vai trò không hợp lệ. Vui lòng liên hệ quản trị viên."
-        );
-        // Xóa token nếu không thể xác định vai trò
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("user");
-      }
-    } catch (err: any) {
-      // Lấy thông báo lỗi từ BE
-      const errorMessage =
-        err.response?.data?.message ||
-        "Tên đăng nhập hoặc mật khẩu không chính xác.";
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+    // Logic gọi API, quản lý trạng thái loading/error đã được đóng gói trong loginUser
+    await loginUser(credentials);
   };
   // ======================================
 

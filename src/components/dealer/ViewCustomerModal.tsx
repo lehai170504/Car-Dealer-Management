@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,9 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { customerService } from "@/services/customer/customerService";
-import Swal from "sweetalert2";
 import { Customer } from "@/types/customer";
+import { useUpdateCustomer } from "@/hooks/useUpdateCustomer";
 
 interface ViewCustomerModalProps {
   isOpen: boolean;
@@ -23,38 +21,45 @@ interface ViewCustomerModalProps {
 export function ViewCustomerModal({
   isOpen,
   onClose,
-  customer,
+  customer: initialCustomer, // Đổi tên để truyền vào hook
   onUpdated,
 }: ViewCustomerModalProps) {
-  const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState<Customer>(customer);
-  const [loading, setLoading] = useState(false);
+  // === SỬ DỤNG CUSTOM HOOK ===
+  const {
+    editMode,
+    setEditMode,
+    formData,
+    loading,
+    handleChange,
+    handleUpdate,
+    cancelEdit,
+  }
+  // Truyền dữ liệu ban đầu cho hook
+  = useUpdateCustomer(initialCustomer); 
+  // =========================
 
-  const handleChange = (key: keyof Customer, value: string) => {
-    setFormData({ ...formData, [key]: value });
+  // Wrapper gọi hook, truyền callback onUpdated và onClose
+  const handleFinalUpdate = () => {
+    handleUpdate(onUpdated, onClose);
   };
+  
+  // Xử lý đóng modal: đảm bảo reset editMode nếu đang chỉnh sửa
+  const handleClose = () => {
+    cancelEdit();
+    onClose();
+  }
 
-  const handleUpdate = async () => {
-    try {
-      setLoading(true);
-      await customerService.updateCustomer(customer._id!, formData);
-      Swal.fire(
-        "Thành công",
-        "Cập nhật thông tin khách hàng thành công",
-        "success"
-      );
-      setEditMode(false);
-      onUpdated();
-      onClose();
-    } catch (err) {
-      Swal.fire("Lỗi", "Không thể cập nhật khách hàng", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const fields = [
+    { key: "name", label: "Họ tên" },
+    { key: "phone", label: "Điện thoại" },
+    { key: "email", label: "Email" },
+    { key: "address", label: "Địa chỉ" },
+    { key: "feedback", label: "Ghi chú / Phản hồi" },
+  ] as const;
+
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="bg-gray-800 text-gray-50 border border-gray-700 max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
@@ -63,16 +68,16 @@ export function ViewCustomerModal({
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
-          {["name", "email", "phone", "address"].map((field) => (
-            <div key={field}>
+          {fields.map((field) => (
+            <div key={field.key}>
               <label className="block mb-1 text-gray-400 capitalize">
-                {field}
+                {field.label}
               </label>
               <Input
                 disabled={!editMode}
-                value={formData[field as keyof Customer] || ""}
+                value={(formData[field.key as keyof Customer] || "") as string}
                 onChange={(e) =>
-                  handleChange(field as keyof Customer, e.target.value)
+                  handleChange(field.key as keyof Customer, e.target.value)
                 }
                 className={`bg-gray-700 border-gray-600 ${
                   editMode ? "text-white" : "text-gray-300"
@@ -85,7 +90,7 @@ export function ViewCustomerModal({
         <div className="flex justify-end gap-3 mt-6">
           {!editMode ? (
             <>
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={handleClose}>
                 Đóng
               </Button>
               <Button
@@ -97,11 +102,15 @@ export function ViewCustomerModal({
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setEditMode(false)}>
+              <Button 
+                variant="outline" 
+                onClick={cancelEdit} // Dùng hàm hủy từ hook
+                disabled={loading}
+              >
                 Hủy
               </Button>
               <Button
-                onClick={handleUpdate}
+                onClick={handleFinalUpdate} // Gọi hàm từ hook
                 disabled={loading}
                 className="bg-green-600 hover:bg-green-700"
               >

@@ -1,4 +1,3 @@
-// src/components/dealer/CreateCustomerModal.tsx
 "use client";
 
 import {
@@ -10,14 +9,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import Swal from "sweetalert2";
-import { customerService } from "@/services/customer/customerService";
+import { useCreateCustomer } from "@/hooks/useCreateCustomer"; 
 
 interface CreateCustomerModalProps {
   open: boolean;
   onClose: () => void;
-  onSuccess?: () => void; // callback để reload danh sách
+  onSuccess?: () => void; 
 }
 
 export function CreateCustomerModal({
@@ -25,58 +22,30 @@ export function CreateCustomerModal({
   onClose,
   onSuccess,
 }: CreateCustomerModalProps) {
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [feedback, setFeedback] = useState("");
-  const [loading, setLoading] = useState(false);
+  const {
+    name, setName,
+    phone, setPhone,
+    email, setEmail,
+    address, setAddress,
+    feedback, setFeedback,
+    loading, 
+    handleSubmit, 
+    resetForm, 
+  } = useCreateCustomer();
 
-  const resetForm = () => {
-    setName("");
-    setPhone("");
-    setEmail("");
-    setAddress("");
-    setFeedback("");
+  // Hàm đóng modal và reset form
+  const handleCloseModal = () => {
+    resetForm(); 
+    onClose();
   };
 
-  const handleSubmit = async () => {
-    if (!name || !phone || !email) {
-      Swal.fire(
-        "Thiếu thông tin",
-        "Vui lòng nhập đủ họ tên, SĐT, email!",
-        "warning"
-      );
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const payload = {
-        name,
-        phone,
-        email,
-        address,
-        feedback,
-      };
-
-      await customerService.createCustomer(payload);
-      Swal.fire("Thành công!", "Đã thêm khách hàng mới.", "success");
-
-      resetForm();
-      onClose();
-      onSuccess?.(); // reload danh sách
-    } catch (error: any) {
-      console.error(error);
-      Swal.fire("Lỗi", error?.message || "Không thể tạo khách hàng.", "error");
-    } finally {
-      setLoading(false);
-    }
+  const handleSubmitWrapper = () => {
+    handleSubmit(onSuccess || (() => {}), handleCloseModal); 
   };
+  
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleCloseModal}>
       <DialogContent className="bg-gray-800 text-gray-100 max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
@@ -90,9 +59,10 @@ export function CreateCustomerModal({
             <label className="block mb-1 text-sm">Họ tên</label>
             <Input
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)} 
               placeholder="Nhập họ tên khách hàng"
               className="bg-gray-700 text-white border-gray-600"
+              disabled={loading} 
             />
           </div>
 
@@ -101,9 +71,10 @@ export function CreateCustomerModal({
             <label className="block mb-1 text-sm">Số điện thoại</label>
             <Input
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(e.target.value)} 
               placeholder="Nhập số điện thoại"
               className="bg-gray-700 text-white border-gray-600"
+              disabled={loading}
             />
           </div>
 
@@ -113,9 +84,9 @@ export function CreateCustomerModal({
             <Input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Nhập email"
+              onChange={(e) => setEmail(e.target.value)} 
               className="bg-gray-700 text-white border-gray-600"
+              disabled={loading}
             />
           </div>
 
@@ -127,6 +98,7 @@ export function CreateCustomerModal({
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Nhập địa chỉ"
               className="bg-gray-700 text-white border-gray-600"
+              disabled={loading}
             />
           </div>
 
@@ -138,6 +110,7 @@ export function CreateCustomerModal({
               onChange={(e) => setFeedback(e.target.value)}
               placeholder="Nhập phản hồi (nếu có)"
               className="bg-gray-700 text-white border-gray-600"
+              disabled={loading}
             />
           </div>
         </div>
@@ -145,14 +118,14 @@ export function CreateCustomerModal({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={handleCloseModal}
             className="border-gray-500 text-gray-300"
             disabled={loading}
           >
             Hủy
           </Button>
           <Button
-            onClick={handleSubmit}
+            onClick={handleSubmitWrapper} 
             disabled={loading}
             className="bg-sky-600 hover:bg-sky-700 text-white"
           >

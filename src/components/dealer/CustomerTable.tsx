@@ -1,6 +1,8 @@
+// src/components/dealer/CustomerTable.tsx
+
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,71 +12,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, Eye, Trash2, Loader2 } from "lucide-react";
+import { Search, Eye, Trash2, Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CreateCustomerModal } from "@/components/dealer/CreateCustomerModal";
 import { ViewCustomerModal } from "@/components/dealer/ViewCustomerModal";
-import { customerService } from "@/services/customer/customerService";
-import Swal from "sweetalert2";
 import { Customer } from "@/types/customer";
+import { useCustomers } from "@/hooks/useCustomer";
 
 export function CustomerTable() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const {
+    filteredCustomers,
+    loading,
+    error,
+    search,
+    setSearch,
+    fetchCustomers,
+    handleDelete,
+  } = useCustomers();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
-  );
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-
-  const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      const data = await customerService.getAllCustomers();
-      setCustomers(data);
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Lỗi khi tải danh sách khách hàng:", err);
-      setError(err.message || "Không thể tải danh sách khách hàng");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const handleDelete = async (id: string) => {
-    const confirm = await Swal.fire({
-      title: "Xóa khách hàng?",
-      text: "Hành động này không thể hoàn tác!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Xóa",
-      cancelButtonText: "Hủy",
-      confirmButtonColor: "#dc2626",
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    try {
-      await customerService.deleteCustomer(id);
-      Swal.fire("Đã xóa!", "Khách hàng đã bị xóa thành công.", "success");
-      fetchCustomers();
-    } catch (err) {
-      Swal.fire("Lỗi", "Không thể xóa khách hàng", "error");
-    }
-  };
-
-  // Lọc client-side
-  const filteredCustomers = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -96,11 +54,12 @@ export function CustomerTable() {
           className="bg-sky-600 hover:bg-sky-700"
           onClick={() => setIsModalOpen(true)}
         >
+          <Plus />
           Thêm Khách hàng mới
         </Button>
       </div>
 
-      {/* Loading / Error */}
+      {/* Loading / Error / Table */}
       {loading ? (
         <div className="flex items-center justify-center py-10 text-gray-400">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -161,6 +120,7 @@ export function CustomerTable() {
                         variant="outline"
                         size="icon"
                         className="border-gray-600 text-red-400 hover:bg-gray-700 hover:border-red-500"
+                        // GỌI HÀM TỪ HOOK
                         onClick={() => handleDelete(customer._id!)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -187,6 +147,7 @@ export function CustomerTable() {
       <CreateCustomerModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        // GỌI HÀM RELOAD TỪ HOOK
         onSuccess={fetchCustomers}
       />
 
@@ -196,6 +157,7 @@ export function CustomerTable() {
           isOpen={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           customer={selectedCustomer}
+          // GỌI HÀM RELOAD TỪ HOOK
           onUpdated={fetchCustomers}
         />
       )}

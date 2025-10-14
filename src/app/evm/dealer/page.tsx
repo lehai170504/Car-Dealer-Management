@@ -1,17 +1,12 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 import { EVM_DealerList } from "@/components/evm/DealerList";
 import { EVM_FinanceManagement } from "@/components/evm/FinanceManagement";
 import { EVM_UserAccountManagement } from "@/components/evm/UserAccountManagement";
-import { useState } from "react";
-import { CreateDealerModal } from "@/components/evm/CreateDealerModal";
 
 export default function EVM_DealerPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   return (
     <div className="min-h-screen bg-gray-800 p-8 text-gray-100">
       <div className="space-y-8 max-w-7xl mx-auto">
@@ -19,14 +14,6 @@ export default function EVM_DealerPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">
             Quản lý Đại lý <span className="text-emerald-400">(EVM)</span>
           </h1>
-
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30 transition-colors"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Thêm Đại lý Mới
-          </Button>
         </div>
 
         <Tabs defaultValue="list" className="w-full">
@@ -79,11 +66,6 @@ export default function EVM_DealerPage() {
           </TabsContent>
         </Tabs>
       </div>
-      {/* Modal thêm đại lý */}
-      <CreateDealerModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
   );
 }

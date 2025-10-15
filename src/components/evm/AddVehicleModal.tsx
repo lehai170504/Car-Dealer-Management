@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useCreateVehicle } from "@/hooks/useCreateVehicle";
 import {
   Dialog,
   DialogContent,
@@ -10,101 +10,110 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-
-interface VehicleMaster {
-  id: string;
-  model: string;
-  version: string;
-  colors: number;
-  basePrice: string;
-  status: string;
-}
+import { Loader2 } from "lucide-react";
 
 interface AddVehicleModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (vehicle: VehicleMaster) => void;
+  onSuccess: () => void;
 }
 
 export function AddVehicleModal({
   open,
   onClose,
-  onSave,
+  onSuccess,
 }: AddVehicleModalProps) {
-  const [model, setModel] = useState("");
-  const [version, setVersion] = useState("");
-  const [colors, setColors] = useState(0);
-  const [basePrice, setBasePrice] = useState("");
-
-  const handleSave = () => {
-    const newVehicle: VehicleMaster = {
-      id: `M${Date.now()}`,
-      model,
-      version,
-      colors,
-      basePrice,
-      status: "Pending",
-    };
-    onSave(newVehicle);
-    setModel("");
-    setVersion("");
-    setColors(0);
-    setBasePrice("");
-    onClose();
-  };
+  const {
+    newVehicleForm,
+    setNewVehicleField,
+    isCreateLoading,
+    handleCreateSubmit,
+  } = useCreateVehicle();
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-gray-900 text-white border-gray-700">
+      <DialogContent className="bg-gray-900 text-white border-gray-700 max-w-md">
         <DialogHeader>
-          <DialogTitle>Thêm Model/Phiên bản</DialogTitle>
+          <DialogTitle>Thêm xe mới</DialogTitle>
         </DialogHeader>
+
         <div className="space-y-3">
           <div>
-            <Label>Mẫu xe</Label>
+            <Label htmlFor="model">Mẫu xe</Label>
             <Input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
+              id="model"
+              value={newVehicleForm.model}
+              onChange={(e) => setNewVehicleField("model", e.target.value)}
+              placeholder="VD: Toyota Camry"
+              className="bg-gray-800 text-white border-gray-600"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="version">Phiên bản</Label>
+            <Input
+              id="version"
+              value={newVehicleForm.version}
+              onChange={(e) => setNewVehicleField("version", e.target.value)}
+              placeholder="VD: 2.5Q Luxury"
+              className="bg-gray-800 text-white border-gray-600"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="color">Màu xe</Label>
+            <Input
+              id="color"
+              value={newVehicleForm.color}
+              onChange={(e) => setNewVehicleField("color", e.target.value)}
+              placeholder="VD: Đen, Trắng, Đỏ..."
+              className="bg-gray-800 text-white border-gray-600"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="features">Tính năng (phân cách bằng dấu phẩy)</Label>
+            <Input
+              id="features"
+              value={newVehicleForm.features.join(", ")}
+              onChange={(e) => setNewVehicleField("features", e.target.value)}
+              placeholder="VD: ABS, GPS, Leather seats, Bluetooth"
               className="bg-gray-800 text-white border-gray-600"
             />
           </div>
           <div>
-            <Label>Phiên bản</Label>
+            <Label htmlFor="price">Giá tiền</Label>
             <Input
-              value={version}
-              onChange={(e) => setVersion(e.target.value)}
-              className="bg-gray-800 text-white border-gray-600"
-            />
-          </div>
-          <div>
-            <Label>Số lượng màu</Label>
-            <Input
-              type="number"
-              value={colors}
-              onChange={(e) => setColors(Number(e.target.value))}
-              className="bg-gray-800 text-white border-gray-600"
-            />
-          </div>
-          <div>
-            <Label>Giá cơ bản (VNĐ)</Label>
-            <Input
-              value={basePrice}
-              onChange={(e) => setBasePrice(e.target.value)}
+              id="price"
+              value={newVehicleForm.price}
+              onChange={(e) => setNewVehicleField("price", e.target.value)}
+              placeholder="VD: 100.000d..."
               className="bg-gray-800 text-white border-gray-600"
             />
           </div>
         </div>
-        <DialogFooter>
+
+        <DialogFooter className="pt-4">
           <Button
-            onClick={handleSave}
+            onClick={() => handleCreateSubmit(onClose, onSuccess)}
             className="bg-emerald-600 hover:bg-emerald-700"
+            disabled={isCreateLoading}
           >
-            Lưu
+            {isCreateLoading ? (
+              <>
+                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                Đang lưu...
+              </>
+            ) : (
+              "Lưu"
+            )}
           </Button>
+
           <Button
             variant="outline"
             onClick={onClose}
             className="border-gray-600 text-gray-300"
+            disabled={isCreateLoading}
           >
             Hủy
           </Button>

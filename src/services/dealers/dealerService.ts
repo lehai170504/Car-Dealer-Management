@@ -1,14 +1,14 @@
 import axiosInstance from "@/utils/axiosInstance";
-import { Dealer } from "@/types/dealer";
+import { Dealer, DealerCredentials } from "@/types/dealer";
 
 const endpoint = "/dealers";
 
 export const dealerService = {
   /** Get all dealers */
-  getAllDealer: async (): Promise<Dealer[]> => {
+  getAllDealers: async (): Promise<Dealer[]> => {
     try {
       const res = await axiosInstance.get(endpoint);
-      return res.data?.data || [];
+      return res.data?.items || [];
     } catch (error: any) {
       console.error("❌ Error fetching dealers:", error);
       throw new Error(
@@ -21,7 +21,7 @@ export const dealerService = {
   getDealerById: async (id: string): Promise<Dealer> => {
     try {
       const res = await axiosInstance.get(`${endpoint}/${id}`);
-      return res.data?.data;
+      return res.data;
     } catch (error: any) {
       console.error(`❌ Error fetching dealer ID ${id}:`, error);
       throw new Error(
@@ -31,12 +31,10 @@ export const dealerService = {
   },
 
   /** Create new dealer */
-  createDealer: async (
-    payload: Omit<Dealer, "_id" | "createdAt" | "updatedAt">
-  ): Promise<Dealer> => {
+  createDealer: async (payload: DealerCredentials): Promise<Dealer> => {
     try {
       const res = await axiosInstance.post(endpoint, payload);
-      return res.data?.data;
+      return res.data;
     } catch (error: any) {
       console.error("❌ Error creating dealer:", error);
       throw new Error(
@@ -48,11 +46,11 @@ export const dealerService = {
   /** Update dealer */
   updateDealer: async (
     id: string,
-    payload: Partial<Omit<Dealer, "_id" | "createdAt" | "updatedAt">>
+    payload: Partial<DealerCredentials>
   ): Promise<Dealer> => {
     try {
-      const res = await axiosInstance.put(`${endpoint}/${id}`, payload);
-      return res.data?.data;
+      const res = await axiosInstance.patch(`${endpoint}/${id}`, payload);
+      return res.data;
     } catch (error: any) {
       console.error(`❌ Error updating dealer ID ${id}:`, error);
       throw new Error(

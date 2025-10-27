@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 // Import các component đã được chỉnh sửa Dark Theme
-import { CustomerTable } from "@/components/dealer/CustomerTable";
-import { TestDriveSchedule } from "@/components/dealer/TestDriveSchedule";
+import { CustomerTable } from "@/components/customers/CustomerTable";
+import { TestDriveSchedule } from "@/components/testDrives/TestDriveSchedule";
 import { FeedbackComplaintTable } from "@/components/dealer/FeedbackComplaintTable";
 
 export default function CustomerPage() {
@@ -16,15 +16,6 @@ export default function CustomerPage() {
       {/* Header và Nút Tạo Mới */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-50">Quản lý Khách hàng</h1>
-
-        {/* Nút Tạo Mới - Primary Dark Theme */}
-        <Button
-          className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg"
-          onClick={() => console.log("Tạo Khách hàng mới/Lịch hẹn mới")}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Tạo Mới
-        </Button>
       </div>
 
       <Tabs defaultValue="customers" className="w-full">

@@ -2,5 +2,5 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  redirect("/login"); // đổi /login thành page bạn muốn
+  redirect("/auth/login"); // đổi /login thành page bạn muốn
 }

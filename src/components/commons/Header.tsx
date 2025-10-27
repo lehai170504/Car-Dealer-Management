@@ -33,7 +33,7 @@ export function Header({ title }: HeaderProps) {
       } catch (error) {
         console.error("Không thể lấy thông tin người dùng:", error);
         logout();
-        router.push("/login");
+        router.push("/auth/login");
       } finally {
         setLoading(false);
       }
@@ -55,8 +55,12 @@ export function Header({ title }: HeaderProps) {
 
   const handleSettingsClick = () => {
     let profilePath = "/";
-    if (userRole.includes("EVM")) profilePath = "/evm/profile";
-    else if (userRole.includes("DEALER")) profilePath = "/dealer/profile";
+
+    if (userRole.toLowerCase().includes("evm")) profilePath = "/evm/profile";
+    else if (userRole.toLowerCase().includes("dealer"))
+      profilePath = "/dealer/profile";
+    else if (userRole.toLowerCase().includes("admin"))
+      profilePath = "/admin/profile";
 
     if (profilePath !== "/") router.push(profilePath);
     else console.warn("Vai trò người dùng không xác định.");
@@ -64,7 +68,7 @@ export function Header({ title }: HeaderProps) {
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   const primaryColor = "text-sky-400";

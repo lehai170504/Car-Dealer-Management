@@ -1,34 +1,28 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { customerService } from "@/services/customers/customerService";
+import type { CustomerCredentials } from "@/types/customer";
 
-/**
- * Custom hook for managing the creation state and logic of a new customer.
- */
 export const useCreateCustomer = () => {
-  const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [notes, setNotes] = useState("");
+  const [segment, setSegment] = useState<"retail" | "wholesale">("retail");
   const [loading, setLoading] = useState(false);
 
-  /** Reset tất cả các trường input về giá trị mặc định */
   const resetForm = () => {
-    setName("");
+    setFullName("");
     setPhone("");
     setEmail("");
     setAddress("");
-    setFeedback("");
+    setNotes("");
+    setSegment("retail");
   };
 
-  /**
-   * Xử lý việc gửi dữ liệu khách hàng mới lên API.
-   * @param onSuccess Callback được gọi khi tạo thành công (thường là để reload list).
-   * @param onClose Callback được gọi để đóng Modal.
-   */
   const handleSubmit = async (onSuccess: () => void, onClose: () => void) => {
-    if (!name || !phone || !email) {
+    if (!fullName || !phone || !email) {
       Swal.fire(
         "Thiếu thông tin",
         "Vui lòng nhập đủ họ tên, SĐT, email!",
@@ -40,9 +34,18 @@ export const useCreateCustomer = () => {
     try {
       setLoading(true);
 
-      const payload = { name, phone, email, address, feedback };
+      const payload: CustomerCredentials & { segment: "retail" | "wholesale" } =
+        {
+          fullName,
+          phone,
+          email,
+          address,
+          notes,
+          segment,
+        };
+
       await customerService.createCustomer(payload);
-      
+
       Swal.fire("Thành công!", "Đã thêm khách hàng mới.", "success");
 
       resetForm();
@@ -57,15 +60,20 @@ export const useCreateCustomer = () => {
   };
 
   return {
-    // State values and setters
-    name, setName,
-    phone, setPhone,
-    email, setEmail,
-    address, setAddress,
-    feedback, setFeedback,
+    // State values và setters
+    fullName,
+    setFullName,
+    phone,
+    setPhone,
+    email,
+    setEmail,
+    address,
+    setAddress,
+    notes,
+    setNotes,
+    segment,
+    setSegment,
     loading,
-
-    // Actions
     handleSubmit,
     resetForm,
   };

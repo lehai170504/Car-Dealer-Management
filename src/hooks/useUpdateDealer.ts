@@ -1,64 +1,110 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import { dealerService } from "@/services/dealers/dealerService"; 
-import { Dealer } from "@/types/dealer";
+import { dealerService } from "@/services/dealers/dealerService";
+import { Dealer, DealerCredentials, DealerContact } from "@/types/dealer";
 
 interface UseUpdateDealerResult {
   editMode: boolean;
   setEditMode: (mode: boolean) => void;
-  formData: Dealer;
-  handleChange: (key: keyof Dealer, value: any) => void;
+  formData: DealerCredentials;
+  handleChange: <K extends keyof DealerCredentials>(
+    key: K,
+    value: DealerCredentials[K]
+  ) => void;
+  setContactField: (
+    index: number,
+    field: keyof DealerContact,
+    value: string
+  ) => void;
   isUpdateLoading: boolean;
   handleUpdate: (onUpdated: () => void, onClose: () => void) => Promise<void>;
+  cancelEdit: () => void;
 }
 
-/**
- * Custom hook quản lý logic chỉnh sửa và cập nhật thông tin Dealer.
- * @param initialDealer Dữ liệu Dealer ban đầu được truyền vào Modal.
- */
-export const useUpdateDealer = (initialDealer: Dealer): UseUpdateDealerResult => {
+export const useUpdateDealer = (
+  initialDealer: Dealer
+): UseUpdateDealerResult => {
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState<Dealer>(initialDealer);
+  const [formData, setFormData] = useState<DealerCredentials>({
+    name: initialDealer.name,
+    code: initialDealer.code,
+    region: initialDealer.region,
+    address: initialDealer.address,
+    contacts: initialDealer.contacts,
+    creditLimit: initialDealer.creditLimit,
+    status: initialDealer.status,
+  });
   const [isUpdateLoading, setIsUpdateLoading] = useState(false);
 
-  // Đồng bộ hóa form data khi initialDealer thay đổi (ví dụ: mở modal với dealer khác)
+  const cancelEdit = () => {
+    setFormData({
+      name: initialDealer.name,
+      code: initialDealer.code,
+      region: initialDealer.region,
+      address: initialDealer.address,
+      contacts: initialDealer.contacts,
+      creditLimit: initialDealer.creditLimit,
+      status: initialDealer.status,
+    });
+    setEditMode(false);
+  };
   useEffect(() => {
-    setFormData(initialDealer);
+    setFormData({
+      name: initialDealer.name,
+      code: initialDealer.code,
+      region: initialDealer.region,
+      address: initialDealer.address,
+      contacts: initialDealer.contacts,
+      creditLimit: initialDealer.creditLimit,
+      status: initialDealer.status,
+    });
   }, [initialDealer]);
 
-  const handleChange = (key: keyof Dealer, value: any) => {
-    setFormData((prev) => ({ 
-      ...prev, 
-      [key]: key === 'salesTarget' || key === 'debt' ? Number(value) : value, 
+  const handleChange = <K extends keyof DealerCredentials>(
+    key: K,
+    value: DealerCredentials[K]
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: key === "creditLimit" ? Number(value) : value,
     }));
   };
 
+  const setContactField = (
+    index: number,
+    field: keyof DealerContact,
+    value: string
+  ) => {
+    const newContacts = [...formData.contacts];
+    newContacts[index] = { ...newContacts[index], [field]: value };
+    setFormData((prev) => ({ ...prev, contacts: newContacts }));
+  };
+
   const handleUpdate = async (onUpdated: () => void, onClose: () => void) => {
-    if (!formData.name || !formData.contactInfo) {
-       Swal.fire("Thiếu thông tin", "Tên và thông tin liên hệ không được để trống.", "warning");
-       return;
+    if (
+      !formData.name ||
+      !formData.code ||
+      !formData.region ||
+      !formData.address ||
+      formData.contacts.some((c) => !c.name || !c.phone || !c.email)
+    ) {
+      Swal.fire(
+        "Thiếu thông tin",
+        "Vui lòng điền đầy đủ tất cả các trường và thông tin liên hệ!",
+        "warning"
+      );
+      return;
     }
-    
+
     try {
       setIsUpdateLoading(true);
+      await dealerService.updateDealer(initialDealer._id, formData);
 
-      const payload = {
-        ...formData,
-        salesTarget: Number(formData.salesTarget),
-        debt: Number(formData.debt),
-      };
-      
-      // Lấy ID từ dữ liệu ban đầu
-      const dealerId = initialDealer._id!; 
-      
-      await dealerService.updateDealer(dealerId, payload);
-      
       Swal.fire(
         "Thành công",
         "Cập nhật thông tin Dealer thành công",
         "success"
       );
-      
       setEditMode(false);
       onUpdated();
       onClose();
@@ -75,7 +121,9 @@ export const useUpdateDealer = (initialDealer: Dealer): UseUpdateDealerResult =>
     setEditMode,
     formData,
     handleChange,
+    setContactField,
     isUpdateLoading,
     handleUpdate,
+    cancelEdit,
   };
 };

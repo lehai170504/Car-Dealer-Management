@@ -2,9 +2,13 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role: "Admin" | "Dealer Mangager" | "EVM Staff" | " Dealer Staff" | string;
+  role: "Admin" | "DealerMangager" | "EVMStaff" | " DealerStaff" | string;
   createdAt: string;
   updatedAt: string;
+  status: "active" | "inactive";
+  profile: {
+    name: string;
+  };
 }
 
 export interface LoginCredentials {

@@ -2,13 +2,11 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { useState } from "react";
 
-import { SalesOrderTable } from "@/components/dealer/SalesOrderTable";
-import { QuoteTable } from "@/components/dealer/QuoteTable";
-import { DeliverySchedule } from "@/components/dealer/DeliverySchedule";
+import { OrderTable } from "@/components/order/SalesOrderTable";
+import { QuoteTable } from "@/components/quotes/QuoteTable";
+import { ContractTable } from "@/components/contracts/ContractTable";
 import { CreateSalesModal } from "../../../components/dealer/CreateSalesModal";
 
 export default function SalesPage() {
@@ -19,13 +17,6 @@ export default function SalesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-50">Quản lý Bán hàng</h1>
-        <Button
-          className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg"
-          onClick={() => setOpenModal(true)}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Tạo Báo giá/Đơn hàng
-        </Button>
       </div>
 
       {/* Tabs */}
@@ -47,7 +38,7 @@ export default function SalesPage() {
             value="delivery"
             className="data-[state=active]:bg-sky-600 data-[state=active]:text-white data-[state=inactive]:text-gray-300"
           >
-            Giao xe (Delivery)
+            Danh sách hợp đồng (Contract)
           </TabsTrigger>
         </TabsList>
 
@@ -62,14 +53,14 @@ export default function SalesPage() {
           <h2 className="text-xl font-semibold mb-4 text-gray-200">
             Danh sách Đơn hàng
           </h2>
-          <SalesOrderTable />
+          <OrderTable />
         </TabsContent>
 
         <TabsContent value="delivery" className="pt-4">
           <h2 className="text-xl font-semibold mb-4 text-gray-200">
-            Lịch trình Giao xe
+            Danh sách hợp đồng
           </h2>
-          <DeliverySchedule />
+          <ContractTable />
         </TabsContent>
       </Tabs>
 

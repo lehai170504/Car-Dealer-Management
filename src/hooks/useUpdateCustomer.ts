@@ -4,78 +4,96 @@ import { customerService } from "@/services/customers/customerService";
 import { Customer } from "@/types/customer";
 
 /**
- * Custom hook for managing the view/edit/update state and logic for an existing customer.
- * * @param initialCustomer The customer object passed to the modal.
+ * Custom hook quản lý view/edit/update cho khách hàng có sẵn
+ * @param initialCustomer Customer được truyền vào từ Modal/Parent component
  */
 export const useUpdateCustomer = (initialCustomer: Customer) => {
   const [editMode, setEditMode] = useState(false);
-  // Khởi tạo formData bằng initialCustomer và đồng bộ khi prop thay đổi
-  const [formData, setFormData] = useState<Customer>(initialCustomer);
+  const [formData, setFormData] = useState<
+    Omit<Customer, "_id" | "createdAt" | "updatedAt">
+  >({
+    fullName: initialCustomer.fullName,
+    phone: initialCustomer.phone,
+    email: initialCustomer.email,
+    address: initialCustomer.address,
+    notes: initialCustomer.notes,
+    segment: initialCustomer.segment || "default",
+  });
   const [loading, setLoading] = useState(false);
 
-  // Đồng bộ lại formData khi customer prop thay đổi
+  // Đồng bộ formData khi initialCustomer thay đổi
   useEffect(() => {
-    setFormData(initialCustomer);
+    setFormData({
+      fullName: initialCustomer.fullName,
+      phone: initialCustomer.phone,
+      email: initialCustomer.email,
+      address: initialCustomer.address,
+      notes: initialCustomer.notes,
+      segment: initialCustomer.segment || "default",
+    });
   }, [initialCustomer]);
 
-  /**
-   * Cập nhật giá trị trường trong formData.
-   */
-  const handleChange = (key: keyof Customer, value: string) => {
+  /** Cập nhật giá trị trong formData */
+  const handleChange = (key: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  /**
-   * Xử lý việc gửi dữ liệu cập nhật lên API.
-   * @param onUpdated Callback được gọi khi cập nhật thành công (thường là để reload list).
-   * @param onClose Callback được gọi để đóng Modal.
-   */
   const handleUpdate = async (onUpdated: () => void, onClose: () => void) => {
-    if (!formData.name || !formData.phone || !formData.email) {
-       Swal.fire(
+    if (!formData.fullName || !formData.phone || !formData.email) {
+      Swal.fire(
         "Thiếu thông tin",
         "Vui lòng nhập đủ họ tên, SĐT, email!",
         "warning"
       );
       return;
     }
-    
+
     try {
       setLoading(true);
-      await customerService.updateCustomer(initialCustomer._id!, formData); 
-      
+
+      await customerService.updateCustomer(initialCustomer._id, formData);
+
       Swal.fire(
         "Thành công",
         "Cập nhật thông tin khách hàng thành công",
         "success"
       );
-      
+
       setEditMode(false);
       onUpdated();
       onClose();
-    } catch (err) {
-      Swal.fire("Lỗi", "Không thể cập nhật khách hàng", "error");
+    } catch (err: any) {
+      console.error(err);
+      Swal.fire(
+        "Lỗi",
+        err?.message || "Không thể cập nhật khách hàng",
+        "error"
+      );
     } finally {
       setLoading(false);
     }
   };
-  
-  /** Hủy chế độ chỉnh sửa và reset formData về trạng thái ban đầu */
+
+  /** Hủy edit và reset formData */
   const cancelEdit = () => {
     setEditMode(false);
-    setFormData(initialCustomer);
+    setFormData({
+      fullName: initialCustomer.fullName,
+      phone: initialCustomer.phone,
+      email: initialCustomer.email,
+      address: initialCustomer.address,
+      notes: initialCustomer.notes,
+      segment: initialCustomer.segment || "default",
+    });
   };
 
   return {
-    // State values
     editMode,
     setEditMode,
     formData,
     loading,
-
-    // Actions
     handleChange,
     handleUpdate,
-    cancelEdit
+    cancelEdit,
   };
 };

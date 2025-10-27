@@ -44,43 +44,47 @@ export const register = async (
 
     return newUser as UserProfile;
   } catch (error) {
-    // Xử lý lỗi: Nếu Admin không có quyền (403) hoặc lỗi validation
     console.error("Registration API error:", error);
     throw error;
   }
 };
 
-/**
- * Xử lý logic đăng xuất.
- */
-export const logout = (): void => {
-  // Xóa Token và thông tin người dùng
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("user");
-};
+export const logout = async (): Promise<void> => {
+  try {
+    await axiosInstance.post(`${endpoint}/logout`);
 
-export const getCurrentUser = (): UserProfile | null => {
-  const userJson = localStorage.getItem("user");
-  if (userJson) {
-    try {
-      return JSON.parse(userJson) as UserProfile;
-    } catch (e) {
-      console.error("Error parsing user data from localStorage", e);
-      return null;
-    }
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+  } catch (error: any) {
+    console.error("Logout API error:", error);
+
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
   }
-  return null;
 };
 
 export const getProfile = async (): Promise<UserProfile> => {
   try {
     const response = await axiosInstance.get<UserProfile>(`${endpoint}/me`);
-
-    // Dựa trên hình ảnh, BE trả về trực tiếp đối tượng UserProfile
     return response.data;
   } catch (error) {
     // Xử lý lỗi: Thường là 401 Unauthorized nếu token hết hạn/không hợp lệ
     console.error("Get Profile API error:", error);
+    throw error;
+  }
+};
+
+export const refreshToken = async (): Promise<LoginResponse> => {
+  try {
+    const response = await axiosInstance.post(`${endpoint}/refresh`);
+
+    const { token, user } = response.data;
+    localStorage.setItem("accessToken", token);
+    localStorage.setItem("user", JSON.stringify(user));
+
+    return response.data;
+  } catch (error) {
+    console.error("Refresh Token API error:", error);
     throw error;
   }
 };

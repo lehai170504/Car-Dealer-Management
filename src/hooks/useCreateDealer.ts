@@ -1,83 +1,94 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
-import { dealerService } from "@/services/dealers/dealerService"; // Giả định service đã được import
-import { Dealer } from "@/types/dealer";
+import { dealerService } from "@/services/dealers/dealerService";
+import { DealerCredentials, DealerContact, DealerStatus } from "@/types/dealer";
 
-type NewDealerPayload = Omit<Dealer, "_id" | "createdAt" | "updatedAt">;
+const initialContact: DealerContact = {
+  _id: "", // thường backend sẽ tạo
+  name: "",
+  phone: "",
+  email: "",
+};
+
+const initialForm: DealerCredentials = {
+  name: "",
+  code: "",
+  region: "",
+  address: "",
+  contacts: [initialContact],
+  creditLimit: 0,
+  status: "active",
+};
 
 export const useCreateDealer = () => {
-  const initialState: NewDealerPayload = {
-    name: "",
-    location: "",
-    contactInfo: "",
-    salesTarget: 0,
-    debt: 0,
-  };
-  
-  const [newDealerForm, setNewDealerForm] =
-    useState<NewDealerPayload>(initialState);
+  const [dealerForm, setDealerForm] = useState<DealerCredentials>(initialForm);
   const [isCreateLoading, setIsCreateLoading] = useState(false);
-  
-  const setNewDealerField = (key: keyof NewDealerPayload, value: any) => {
-    setNewDealerForm((prev) => ({
+
+  const setDealerField = <K extends keyof DealerCredentials>(
+    key: K,
+    value: DealerCredentials[K]
+  ) => {
+    setDealerForm((prev) => ({
       ...prev,
-      [key]: key === 'salesTarget' || key === 'debt' ? Number(value) : value,
+      [key]: value,
     }));
   };
 
-  /** Reset tất cả các trường input về giá trị mặc định */
-  const resetCreateForm = () => {
-    setNewDealerForm(initialState);
+  const setContactField = (
+    index: number,
+    field: keyof DealerContact,
+    value: string
+  ) => {
+    const newContacts = [...dealerForm.contacts];
+    newContacts[index] = { ...newContacts[index], [field]: value };
+    setDealerForm((prev) => ({ ...prev, contacts: newContacts }));
   };
 
- const handleCreateSubmit = async (
-  onClose: () => void,
-  onSuccess: () => void
-): Promise<boolean> => {
-  const { name, location, contactInfo } = newDealerForm;
+  const resetDealerForm = () => setDealerForm(initialForm);
 
-  if (!name || !location || !contactInfo) {
-    Swal.fire(
-      "Thiếu thông tin",
-      "Vui lòng nhập đủ tên, địa điểm, và thông tin liên hệ!",
-      "warning"
-    );
-    return false; // ✅ Trả về false khi thiếu dữ liệu
-  }
+  const handleCreateSubmit = async (
+    onClose: () => void,
+    onSuccess: () => void
+  ) => {
+    const { name, code, region, address, contacts } = dealerForm;
+    if (
+      !name ||
+      !code ||
+      !region ||
+      !address ||
+      contacts.some((c) => !c.name || !c.phone || !c.email)
+    ) {
+      Swal.fire(
+        "Thiếu thông tin",
+        "Vui lòng điền đầy đủ tất cả các trường và thông tin liên hệ!",
+        "warning"
+      );
+      return false;
+    }
 
-  try {
-    setIsCreateLoading(true);
-
-    const payload = {
-      ...newDealerForm,
-      salesTarget: Number(newDealerForm.salesTarget),
-      debt: Number(newDealerForm.debt),
-    };
-
-    await dealerService.createDealer(payload);
-
-    Swal.fire("Thành công!", "Đã thêm Dealer mới.", "success");
-
-    resetCreateForm();
-    onClose();
-    onSuccess();
-
-    return true; // ✅ Trả về true khi thành công
-  } catch (error: any) {
-    console.error(error);
-    Swal.fire("Lỗi", error?.message || "Không thể tạo Dealer.", "error");
-    return false; // ✅ Trả về false khi có lỗi
-  } finally {
-    setIsCreateLoading(false);
-  }
-};
-
+    try {
+      setIsCreateLoading(true);
+      await dealerService.createDealer(dealerForm);
+      Swal.fire("Thành công!", "Đã thêm Dealer mới.", "success");
+      resetDealerForm();
+      onClose();
+      onSuccess();
+      return true;
+    } catch (error: any) {
+      console.error(error);
+      Swal.fire("Lỗi", error?.message || "Không thể tạo Dealer.", "error");
+      return false;
+    } finally {
+      setIsCreateLoading(false);
+    }
+  };
 
   return {
-    newDealerForm,
-    setNewDealerField,
+    dealerForm,
+    setDealerField,
+    setContactField,
+    resetDealerForm,
     isCreateLoading,
     handleCreateSubmit,
-    resetCreateForm,
   };
 };

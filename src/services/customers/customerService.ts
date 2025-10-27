@@ -1,14 +1,21 @@
+// src/services/customers/customerService.ts
 import axiosInstance from "@/utils/axiosInstance";
-import { Customer } from "@/types/customer";
+import {
+  Customer,
+  CustomerCredentials,
+  CustomerListResponse,
+  CustomerResponse,
+} from "@/types/customer";
 
 const endpoint = "/customers";
 
 export const customerService = {
-  /** Get all customers */
+  /** Lấy danh sách khách hàng (trả về mảng Customer) */
   getAllCustomers: async (): Promise<Customer[]> => {
     try {
-      const res = await axiosInstance.get(endpoint);
-      return res.data?.data || [];
+      const res = await axiosInstance.get<CustomerListResponse>(endpoint);
+      // Trả về mảng items từ API
+      return res.data?.items || [];
     } catch (error: any) {
       console.error("❌ Error fetching customers:", error);
       throw new Error(
@@ -17,11 +24,13 @@ export const customerService = {
     }
   },
 
-  /** Get customer by ID */
+  /** Lấy chi tiết khách hàng theo ID */
   getCustomerById: async (id: string): Promise<Customer> => {
     try {
-      const res = await axiosInstance.get(`${endpoint}/${id}`);
-      return res.data?.data;
+      const res = await axiosInstance.get<CustomerResponse>(
+        `${endpoint}/${id}`
+      );
+      return res.data;
     } catch (error: any) {
       console.error(`❌ Error fetching customer ID ${id}:`, error);
       throw new Error(
@@ -30,13 +39,11 @@ export const customerService = {
     }
   },
 
-  /** Create new customer */
-  createCustomer: async (
-    payload: Omit<Customer, "_id" | "createdAt" | "updatedAt">
-  ): Promise<Customer> => {
+  /** Tạo khách hàng mới */
+  createCustomer: async (payload: CustomerCredentials): Promise<Customer> => {
     try {
-      const res = await axiosInstance.post(endpoint, payload);
-      return res.data?.data;
+      const res = await axiosInstance.post<CustomerResponse>(endpoint, payload);
+      return res.data;
     } catch (error: any) {
       console.error("❌ Error creating customer:", error);
       throw new Error(
@@ -45,14 +52,17 @@ export const customerService = {
     }
   },
 
-  /** Update customer */
+  /** Cập nhật khách hàng */
   updateCustomer: async (
     id: string,
-    payload: Partial<Omit<Customer, "_id" | "createdAt" | "updatedAt">>
+    payload: Partial<CustomerCredentials>
   ): Promise<Customer> => {
     try {
-      const res = await axiosInstance.put(`${endpoint}/${id}`, payload);
-      return res.data?.data;
+      const res = await axiosInstance.patch<CustomerResponse>(
+        `${endpoint}/${id}`,
+        payload
+      );
+      return res.data;
     } catch (error: any) {
       console.error(`❌ Error updating customer ID ${id}:`, error);
       throw new Error(
@@ -61,10 +71,12 @@ export const customerService = {
     }
   },
 
-  /** Delete customer */
+  /** Xóa khách hàng */
   deleteCustomer: async (id: string): Promise<{ success: boolean }> => {
     try {
-      const res = await axiosInstance.delete(`${endpoint}/${id}`);
+      const res = await axiosInstance.delete<{ success: boolean }>(
+        `${endpoint}/${id}`
+      );
       return res.data;
     } catch (error: any) {
       console.error(`❌ Error deleting customer ID ${id}:`, error);

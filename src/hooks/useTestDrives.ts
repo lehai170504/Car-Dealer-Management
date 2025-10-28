@@ -1,4 +1,5 @@
-// src/hooks/useTestDrives.ts
+"use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { TestDrive } from "@/types/testDrives";
 import { testDriveService } from "@/services/testDrives/testDriveService";
@@ -12,12 +13,18 @@ interface UseTestDrivesResult {
   error: string | null;
   search: string;
   setSearch: (s: string) => void;
-  fetchTestDrives: () => Promise<void>;
+
+  page: number;
+  setPage: (p: number) => void;
+  limit: number;
+  total: number;
+
+  fetchTestDrives: (page?: number) => Promise<void>;
   fetchTestDriveById: (id: string) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
 }
 
-/** Hook quản lý danh sách và chi tiết Test Drives */
+/** 🧩 Hook quản lý danh sách và chi tiết Test Drives */
 export const useTestDrives = (): UseTestDrivesResult => {
   const [testDrives, setTestDrives] = useState<TestDrive[]>([]);
   const [selectedTestDrive, setSelectedTestDrive] = useState<TestDrive | null>(
@@ -27,29 +34,45 @@ export const useTestDrives = (): UseTestDrivesResult => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // === Lấy danh sách test drives ===
-  const fetchTestDrives = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await testDriveService.getAllTestDrives();
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
-      // Sắp xếp theo createdAt giảm dần
-      const sorted = data.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+  /** 🔵 Lấy danh sách test drives (phân trang) */
+  const fetchTestDrives = useCallback(
+    async (pageNumber: number = page) => {
+      try {
+        setLoading(true);
+        const res = await testDriveService.getAllTestDrives({
+          page: pageNumber,
+          limit,
+        });
 
-      setTestDrives(sorted);
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Lỗi khi tải danh sách test drives:", err);
-      setError(err?.message || "Không thể tải danh sách test drives từ API.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        // Sắp xếp theo createdAt giảm dần
+        const sorted = (res.items ?? []).sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
-  // === Lấy chi tiết test drive theo ID ===
+        setTestDrives(sorted);
+        setTotal(res.total ?? 0);
+
+        if (typeof res.page === "number") setPage(res.page);
+        if (typeof res.limit === "number") setLimit(res.limit);
+
+        setError(null);
+      } catch (err: any) {
+        console.error("❌ Lỗi khi tải danh sách test drives:", err);
+        setError(err?.message || "Không thể tải danh sách test drives.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, limit]
+  );
+
+  /** 🟢 Lấy chi tiết test drive theo ID */
   const fetchTestDriveById = useCallback(async (id: string) => {
     try {
       setLoading(true);
@@ -64,7 +87,7 @@ export const useTestDrives = (): UseTestDrivesResult => {
     }
   }, []);
 
-  // === Xóa test drive ===
+  /** 🔴 Xóa test drive */
   const handleDelete = useCallback(
     async (id: string) => {
       const confirm = await Swal.fire({
@@ -83,7 +106,7 @@ export const useTestDrives = (): UseTestDrivesResult => {
         setLoading(true);
         await testDriveService.deleteTestDrive(id);
         Swal.fire("Đã xóa!", "Test drive đã bị xóa thành công.", "success");
-        await fetchTestDrives();
+        await fetchTestDrives(page);
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa test drive:", err);
         Swal.fire("Lỗi", err?.message || "Không thể xóa test drive", "error");
@@ -91,25 +114,25 @@ export const useTestDrives = (): UseTestDrivesResult => {
         setLoading(false);
       }
     },
-    [fetchTestDrives]
+    [fetchTestDrives, page]
   );
 
-  // === Lọc danh sách client-side ===
+  /** 🧮 Lọc danh sách client-side */
   const filteredTestDrives = useMemo(() => {
     if (!search) return testDrives;
-    const lowercased = search.toLowerCase();
+    const lower = search.toLowerCase();
     return testDrives.filter(
       (td) =>
-        td.status?.toLowerCase().includes(lowercased) ||
-        td.customer?.toLowerCase().includes(lowercased) ||
-        td.dealer?.toLowerCase().includes(lowercased)
+        td.status?.toLowerCase().includes(lower) ||
+        td.customer?.toLowerCase().includes(lower) ||
+        td.dealer?.toLowerCase().includes(lower)
     );
   }, [testDrives, search]);
 
-  // === Gọi lần đầu ===
+  /** 🪄 Gọi lần đầu */
   useEffect(() => {
-    fetchTestDrives();
-  }, [fetchTestDrives]);
+    fetchTestDrives(page);
+  }, [fetchTestDrives, page]);
 
   return {
     testDrives,
@@ -119,6 +142,10 @@ export const useTestDrives = (): UseTestDrivesResult => {
     error,
     search,
     setSearch,
+    page,
+    setPage,
+    limit,
+    total,
     fetchTestDrives,
     fetchTestDriveById,
     handleDelete,

@@ -18,12 +18,11 @@ export const login = async (
       credentials
     );
 
-    const { token, user } = response.data;
+    const { token, user, refreshToken } = response.data;
 
-    // Lưu trữ Token và User Info vào LocalStorage
     localStorage.setItem("accessToken", token);
-    // Lưu user dưới dạng chuỗi JSON
     localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("refreshToken", refreshToken);
 
     return response.data;
   } catch (error) {
@@ -76,15 +75,31 @@ export const getProfile = async (): Promise<UserProfile> => {
 
 export const refreshToken = async (): Promise<LoginResponse> => {
   try {
-    const response = await axiosInstance.post(`${endpoint}/refresh`);
+    const storedRefreshToken = localStorage.getItem("refreshToken");
 
-    const { token, user } = response.data;
+    if (!storedRefreshToken) {
+      throw new Error("Không tìm thấy refresh token. Vui lòng đăng nhập lại.");
+    }
+
+    const response = await axiosInstance.post<LoginResponse>(
+      `${endpoint}/refresh`,
+      { refreshToken: storedRefreshToken }
+    );
+
+    const { token, refreshToken: newRefreshToken, user } = response.data;
+
+    // 🔹 Cập nhật lại localStorage
     localStorage.setItem("accessToken", token);
+    localStorage.setItem("refreshToken", newRefreshToken);
     localStorage.setItem("user", JSON.stringify(user));
 
     return response.data;
   } catch (error) {
     console.error("Refresh Token API error:", error);
+    // Nếu refresh token không hợp lệ → logout
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
     throw error;
   }
 };

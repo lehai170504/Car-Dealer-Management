@@ -1,4 +1,5 @@
-// src/hooks/useQuotes.ts
+"use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Quote } from "@/types/quotes";
 import { quotesService } from "@/services/quotes/quotesService";
@@ -12,11 +13,18 @@ interface UseQuotesResult {
   error: string | null;
   search: string;
   setSearch: (s: string) => void;
-  fetchQuotes: () => Promise<void>;
+
+  page: number;
+  setPage: (p: number) => void;
+  limit: number;
+  total: number;
+
+  fetchQuotes: (page?: number) => Promise<void>;
   fetchQuoteById: (id: string) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
 }
 
+/** 🧩 Hook quản lý danh sách và chi tiết Quotes */
 export const useQuotes = (): UseQuotesResult => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
@@ -24,29 +32,46 @@ export const useQuotes = (): UseQuotesResult => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // === Lấy tất cả quotes ===
-  const fetchQuotes = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await quotesService.getAllQuotes();
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
-      // Sắp xếp theo createdAt giảm dần nếu có
-      const sorted = data.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+  /** 🔵 Lấy danh sách quotes (phân trang) */
+  const fetchQuotes = useCallback(
+    async (pageNumber: number = page) => {
+      try {
+        setLoading(true);
+        const res = await quotesService.getAllQuotes({
+          page: pageNumber,
+          limit,
+        });
 
-      setQuotes(sorted);
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Lỗi khi tải danh sách quotes:", err);
-      setError(err?.message || "Không thể tải danh sách quotes từ API.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        // Sắp xếp giảm dần theo createdAt
+        const sorted = (res.items || []).sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
-  // === Lấy chi tiết quote theo ID ===
+        setQuotes(sorted);
+        setTotal(res.total ?? 0);
+
+        // Cập nhật từ BE nếu có
+        if (typeof res.page === "number") setPage(res.page);
+        if (typeof res.limit === "number") setLimit(res.limit);
+
+        setError(null);
+      } catch (err: any) {
+        console.error("❌ Lỗi khi tải danh sách quotes:", err);
+        setError(err?.message || "Không thể tải danh sách quotes.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, limit]
+  );
+
+  /** 🟢 Lấy chi tiết quote theo ID */
   const fetchQuoteById = useCallback(async (id: string) => {
     try {
       setLoading(true);
@@ -54,14 +79,14 @@ export const useQuotes = (): UseQuotesResult => {
       setSelectedQuote(data);
       setError(null);
     } catch (err: any) {
-      console.error(`❌ Lỗi khi lấy thông tin quote ID ${id}:`, err);
+      console.error(`❌ Lỗi khi lấy quote ID ${id}:`, err);
       setError(err?.message || "Không thể tải thông tin quote.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // === Xóa quote ===
+  /** 🔴 Xóa quote */
   const handleDelete = useCallback(
     async (id: string) => {
       const confirm = await Swal.fire({
@@ -73,13 +98,14 @@ export const useQuotes = (): UseQuotesResult => {
         cancelButtonText: "Hủy",
         confirmButtonColor: "#dc2626",
       });
+
       if (!confirm.isConfirmed) return;
 
       try {
         setLoading(true);
         await quotesService.deleteQuote(id);
         Swal.fire("Đã xóa!", "Quote đã bị xóa thành công.", "success");
-        await fetchQuotes();
+        await fetchQuotes(page);
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa quote:", err);
         Swal.fire("Lỗi", err?.message || "Không thể xóa quote", "error");
@@ -87,24 +113,24 @@ export const useQuotes = (): UseQuotesResult => {
         setLoading(false);
       }
     },
-    [fetchQuotes]
+    [fetchQuotes, page]
   );
 
-  // === Lọc danh sách client-side ===
-  // === Lọc danh sách theo status ===
+  /** 🧮 Lọc danh sách client-side */
   const filteredQuotes = useMemo(() => {
     if (!search) return quotes;
-    const lowercasedSearch = search.toLowerCase();
-
-    return quotes.filter((q) =>
-      q.status?.toLowerCase().includes(lowercasedSearch)
+    const lower = search.toLowerCase();
+    return quotes.filter(
+      (q) =>
+        q.status?.toLowerCase().includes(lower) ||
+        q.customer?.toLowerCase().includes(lower)
     );
   }, [quotes, search]);
 
-  // === Load lần đầu ===
+  /** 🪄 Gọi lần đầu */
   useEffect(() => {
-    fetchQuotes();
-  }, [fetchQuotes]);
+    fetchQuotes(page);
+  }, [fetchQuotes, page]);
 
   return {
     quotes,
@@ -114,6 +140,10 @@ export const useQuotes = (): UseQuotesResult => {
     error,
     search,
     setSearch,
+    page,
+    setPage,
+    limit,
+    total,
     fetchQuotes,
     fetchQuoteById,
     handleDelete,

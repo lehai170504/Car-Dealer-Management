@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { OrderTable } from "@/components/order/SalesOrderTable";
 import { QuoteTable } from "@/components/quotes/QuoteTable";
-import { ContractTable } from "@/components/contracts/ContractTable";
+import { PaymentTable } from "@/components/payments/PaymentTable";
 import { CreateSalesModal } from "../../../components/dealer/CreateSalesModal";
 
 export default function SalesPage() {
@@ -38,7 +38,7 @@ export default function SalesPage() {
             value="delivery"
             className="data-[state=active]:bg-sky-600 data-[state=active]:text-white data-[state=inactive]:text-gray-300"
           >
-            Danh sách hợp đồng (Contract)
+            Bảng thanh toán (Payment)
           </TabsTrigger>
         </TabsList>
 
@@ -58,9 +58,9 @@ export default function SalesPage() {
 
         <TabsContent value="delivery" className="pt-4">
           <h2 className="text-xl font-semibold mb-4 text-gray-200">
-            Danh sách hợp đồng
+            Danh sách thanh toán
           </h2>
-          <ContractTable />
+          <PaymentTable />
         </TabsContent>
       </Tabs>
 

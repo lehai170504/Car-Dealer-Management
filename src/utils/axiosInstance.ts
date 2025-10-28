@@ -1,6 +1,8 @@
-// src/utils/axiosInstance.ts
 import axios, { AxiosError } from "axios";
-import { refreshToken, logout } from "@/services/auth/authService";
+import {
+  refreshToken as refreshTokenAPI,
+  logout,
+} from "@/services/auth/authService";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://sdn-be-1htr.onrender.com/api";
@@ -11,7 +13,7 @@ const axiosInstance = axios.create({
   timeout: 15000,
 });
 
-// === Quản lý refresh queue ===
+// ==================== Refresh queue để tránh gọi nhiều lần ====================
 let isRefreshing = false;
 let failedQueue: {
   resolve: (value: unknown) => void;
@@ -29,78 +31,77 @@ const processQueue = (
   failedQueue = [];
 };
 
-// === Request Interceptor ===
+// ==================== Request Interceptor ====================
 axiosInstance.interceptors.request.use(
   (config) => {
-    // ✅ Kiểm tra window (Next.js có thể render server-side)
     if (typeof window !== "undefined") {
-      const accessToken = localStorage.getItem("accessToken");
-      if (accessToken) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
-      }
+      const token = localStorage.getItem("accessToken");
+      if (token) config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// === Response Interceptor (Refresh Token Handling) ===
+// ==================== Response Interceptor ====================
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest: any = error.config;
 
-    // ✅ Chỉ xử lý lỗi 401 (Unauthorized)
-    if (
-      error.response?.status === 401 &&
-      originalRequest &&
-      !originalRequest._retry
-    ) {
+    // ✅ Nếu gặp lỗi 401 (Unauthorized)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Nếu đang refresh → đợi cho tới khi refresh xong
       if (isRefreshing) {
-        // Nếu đang refresh, chờ token mới rồi retry request
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
-            if (token && typeof token === "string") {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+          .then((newToken) => {
+            if (typeof newToken === "string") {
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
             }
             return axiosInstance(originalRequest);
           })
           .catch((err) => Promise.reject(err));
       }
 
+      // Bắt đầu refresh
       originalRequest._retry = true;
       isRefreshing = true;
 
       try {
-        const response = await refreshToken();
-        const newToken = response.token;
+        const refreshed = await refreshTokenAPI();
+        const newToken = refreshed.token;
+        const newRefreshToken = refreshed.refreshToken;
 
+        // ✅ Cập nhật localStorage & header
         if (typeof window !== "undefined") {
           localStorage.setItem("accessToken", newToken);
+          localStorage.setItem("refreshToken", newRefreshToken);
         }
 
-        // Gán token mới cho axios mặc định
-        axiosInstance.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-        processQueue(null, newToken);
+        axiosInstance.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${newToken}`;
 
+        processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
         return axiosInstance(originalRequest);
       } catch (refreshError: any) {
-        console.error("Refresh token failed → logging out:", refreshError);
-
+        console.error("❌ Refresh token failed, logging out...", refreshError);
         processQueue(refreshError as AxiosError, null);
 
-        // ✅ Logout FE & BE an toàn
+        // Gọi logout API nếu có thể
         try {
           await logout();
         } catch (err) {
           console.warn("Logout after refresh fail:", err);
         }
 
-        // ✅ Chỉ redirect nếu đang ở client
+        // Xóa token & redirect login
         if (typeof window !== "undefined") {
+          localStorage.clear();
           window.location.href = "/auth/login";
         }
 
@@ -110,6 +111,7 @@ axiosInstance.interceptors.response.use(
       }
     }
 
+    // ❌ Nếu không phải lỗi 401 → trả lỗi gốc
     return Promise.reject(error);
   }
 );

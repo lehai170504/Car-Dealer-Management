@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 // Import các component EVM (đã được chỉnh sửa sang Dark Theme)
-import { EVM_VehicleMasterTable } from "@/components/evm/VehicleMasterTable";
+import { VehicleGroupAccordionTable } from "@/components/products/VehicleMasterTable";
 import { EVM_InventoryDistribution } from "@/components/evm/InventoryDistribution";
 import { EVM_PricingPolicyTable } from "@/components/evm/PricingPolicyTable";
 
@@ -56,7 +56,7 @@ export default function EVM_ProductPage() {
           <h2 className="text-xl font-semibold mb-4 text-gray-50">
             Danh mục Xe Master
           </h2>
-          <EVM_VehicleMasterTable />
+          <VehicleGroupAccordionTable />
         </TabsContent>
 
         {/* TAB: Phân bổ Tồn kho (Tổng, đã phân bổ, khả dụng) */}

@@ -1,4 +1,5 @@
-// src/hooks/useOrders.ts
+"use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Order } from "@/types/orders";
 import { orderService } from "@/services/orders/ordersService";
@@ -12,12 +13,18 @@ interface UseOrdersResult {
   error: string | null;
   search: string;
   setSearch: (s: string) => void;
-  fetchOrders: () => Promise<void>;
+
+  page: number;
+  setPage: (p: number) => void;
+  limit: number;
+  total: number;
+
+  fetchOrders: (page?: number) => Promise<void>;
   fetchOrderById: (id: string) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
 }
 
-/** Hook quản lý danh sách và chi tiết Orders */
+/** 🧩 Hook quản lý danh sách và chi tiết Orders */
 export const useOrders = (): UseOrdersResult => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -25,29 +32,46 @@ export const useOrders = (): UseOrdersResult => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // === Lấy danh sách orders ===
-  const fetchOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await orderService.getAllOrders();
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
-      // Sắp xếp theo createdAt giảm dần
-      const sorted = data.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+  /** 🔵 Lấy danh sách orders (phân trang) */
+  const fetchOrders = useCallback(
+    async (pageNumber: number = page) => {
+      try {
+        setLoading(true);
+        const res = await orderService.getAllOrders({
+          page: pageNumber,
+          limit,
+        });
 
-      setOrders(sorted);
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Lỗi khi tải danh sách orders:", err);
-      setError(err?.message || "Không thể tải danh sách orders từ API.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        // Sắp xếp theo createdAt giảm dần
+        const sorted = [...(res.items ?? [])].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
-  // === Lấy chi tiết order theo ID ===
+        setOrders(sorted);
+        setTotal(res.total ?? 0);
+
+        // Cập nhật pagination từ server nếu có
+        if (typeof res.page === "number") setPage(res.page);
+        if (typeof res.limit === "number") setLimit(res.limit);
+
+        setError(null);
+      } catch (err: any) {
+        console.error("❌ Lỗi khi tải danh sách orders:", err);
+        setError(err?.message || "Không thể tải danh sách orders.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, limit]
+  );
+
+  /** 🟢 Lấy chi tiết order theo ID */
   const fetchOrderById = useCallback(async (id: string) => {
     try {
       setLoading(true);
@@ -62,7 +86,7 @@ export const useOrders = (): UseOrdersResult => {
     }
   }, []);
 
-  // === Xóa order ===
+  /** 🔴 Xóa order */
   const handleDelete = useCallback(
     async (id: string) => {
       const confirm = await Swal.fire({
@@ -81,7 +105,7 @@ export const useOrders = (): UseOrdersResult => {
         setLoading(true);
         await orderService.deleteOrder(id);
         Swal.fire("Đã xóa!", "Order đã bị xóa thành công.", "success");
-        await fetchOrders();
+        await fetchOrders(page);
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa order:", err);
         Swal.fire("Lỗi", err?.message || "Không thể xóa order", "error");
@@ -89,26 +113,26 @@ export const useOrders = (): UseOrdersResult => {
         setLoading(false);
       }
     },
-    [fetchOrders]
+    [fetchOrders, page]
   );
 
-  // === Lọc danh sách client-side ===
+  /** 🧮 Lọc danh sách client-side */
   const filteredOrders = useMemo(() => {
     if (!search) return orders;
-    const lowercased = search.toLowerCase();
+    const lower = search.toLowerCase();
     return orders.filter(
       (o) =>
-        o.status.toLowerCase().includes(lowercased) ||
-        o.customer.toLowerCase().includes(lowercased) ||
-        o.dealer.toLowerCase().includes(lowercased) ||
-        o.orderNo.toLowerCase().includes(lowercased)
+        o.status?.toLowerCase().includes(lower) ||
+        o.customer?.toLowerCase().includes(lower) ||
+        o.dealer?.toLowerCase().includes(lower) ||
+        o.orderNo?.toLowerCase().includes(lower)
     );
   }, [orders, search]);
 
-  // === Gọi lần đầu ===
+  /** 🪄 Gọi lần đầu */
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    fetchOrders(page);
+  }, [fetchOrders, page]);
 
   return {
     orders,
@@ -118,6 +142,10 @@ export const useOrders = (): UseOrdersResult => {
     error,
     search,
     setSearch,
+    page,
+    setPage,
+    limit,
+    total,
     fetchOrders,
     fetchOrderById,
     handleDelete,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -10,12 +10,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, Eye, Trash2, Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Search, Eye, Trash2, Loader2, Plus } from "lucide-react";
 import { CreateCustomerModal } from "./CreateCustomerModal";
 import { ViewCustomerModal } from "./ViewCustomerModal";
 import { Customer } from "@/types/customer";
 import { useCustomers } from "@/hooks/useCustomer";
+import { Pagination } from "@/components/ui/pagination";
 
 export function CustomerTable() {
   const {
@@ -26,6 +27,10 @@ export function CustomerTable() {
     setSearch,
     fetchCustomers,
     handleDelete,
+    page,
+    setPage,
+    limit,
+    total,
   } = useCustomers();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -33,6 +38,11 @@ export function CustomerTable() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
+
+  // 🔁 Gọi lại API khi chuyển trang
+  useEffect(() => {
+    fetchCustomers(page);
+  }, [page, fetchCustomers]);
 
   return (
     <div className="space-y-6 p-4">
@@ -69,6 +79,9 @@ export function CustomerTable() {
           <Table className="text-gray-50">
             <TableHeader className="bg-gray-700/90">
               <TableRow className="border-gray-700">
+                <TableHead className="text-center font-medium w-[50px]">
+                  STT
+                </TableHead>
                 <TableHead className="font-medium">Tên khách hàng</TableHead>
                 <TableHead className="font-medium">Điện thoại</TableHead>
                 <TableHead className="font-medium">Email</TableHead>
@@ -81,11 +94,14 @@ export function CustomerTable() {
             </TableHeader>
             <TableBody>
               {filteredCustomers.length > 0 ? (
-                filteredCustomers.map((customer) => (
+                filteredCustomers.map((customer, index) => (
                   <TableRow
                     key={customer._id}
                     className="border-gray-700 hover:bg-gray-700/50 transition-colors"
                   >
+                    <TableCell className="text-center font-medium">
+                      {(page - 1) * limit + index + 1}
+                    </TableCell>
                     <TableCell>{customer.fullName}</TableCell>
                     <TableCell>{customer.phone}</TableCell>
                     <TableCell>{customer.email}</TableCell>
@@ -117,7 +133,7 @@ export function CustomerTable() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center text-gray-400 py-6"
                   >
                     Không có khách hàng nào
@@ -129,11 +145,23 @@ export function CustomerTable() {
         )}
       </div>
 
+      {/* Pagination */}
+      {total > limit && (
+        <div className="flex justify-center mt-4">
+          <Pagination
+            currentPage={page}
+            totalCount={total}
+            pageSize={limit}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
+
       {/* Modals */}
       <CreateCustomerModal
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={fetchCustomers}
+        onSuccess={() => fetchCustomers(page)}
       />
 
       {selectedCustomer && (
@@ -141,7 +169,7 @@ export function CustomerTable() {
           customer={selectedCustomer}
           isOpen={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
-          onUpdated={fetchCustomers}
+          onUpdated={() => fetchCustomers(page)}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -15,7 +15,8 @@ import { Input } from "@/components/ui/input";
 import { CreateDealerModal } from "@/components/dealers/CreateDealerModal";
 import { ViewDealerModal } from "@/components/dealers/ViewDealerModal";
 import { Dealer } from "@/types/dealer";
-import { useDealerManagement } from "@/hooks/useDealerManagement";
+import { useDealers } from "@/hooks/useDealers";
+import { Pagination } from "@/components/ui/pagination";
 
 export function DealerTable() {
   const {
@@ -24,13 +25,22 @@ export function DealerTable() {
     error,
     search,
     setSearch,
+    page,
+    setPage,
+    limit,
+    total,
     fetchDealers,
     handleDelete,
-  } = useDealerManagement();
+  } = useDealers();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+
+  // Gọi lại API khi chuyển trang
+  useEffect(() => {
+    fetchDealers(page);
+  }, [page, fetchDealers]);
 
   return (
     <div className="space-y-6 p-4">
@@ -39,7 +49,7 @@ export function DealerTable() {
         <div className="relative w-full sm:w-1/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Tìm kiếm theo tên, khu vực, thông tin liên hệ..."
+            placeholder="Tìm kiếm theo tên, khu vực, liên hệ..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 bg-gray-700 border-gray-600 text-gray-50 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-emerald-500"
@@ -47,7 +57,7 @@ export function DealerTable() {
         </div>
 
         <Button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+          className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
           onClick={() => setIsCreateModalOpen(true)}
         >
           <Plus className="h-4 w-4" /> Thêm Đại lý Mới
@@ -90,17 +100,17 @@ export function DealerTable() {
                     className="border-gray-700 hover:bg-gray-700/50 transition-colors"
                   >
                     <TableCell className="text-center font-medium">
-                      {index + 1}
+                      {(page - 1) * limit + index + 1}
                     </TableCell>
                     <TableCell>{dealer.name}</TableCell>
                     <TableCell>{dealer.region}</TableCell>
                     <TableCell>
                       {dealer.contacts
-                        .map((c) => `${c.name} (${c.phone})`)
+                        ?.map((c) => `${c.name} (${c.phone})`)
                         .join(", ")}
                     </TableCell>
                     <TableCell className="text-center font-semibold text-emerald-400">
-                      {dealer.creditLimit.toLocaleString("vi-VN")}
+                      {dealer.creditLimit?.toLocaleString("vi-VN")}
                     </TableCell>
                     <TableCell>
                       <span
@@ -152,6 +162,18 @@ export function DealerTable() {
           </Table>
         )}
       </div>
+
+      {/* Pagination */}
+      {total > limit && (
+        <div className="flex justify-center mt-4">
+          <Pagination
+            currentPage={page}
+            totalCount={total}
+            pageSize={limit}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
 
       {/* Modals */}
       <CreateDealerModal

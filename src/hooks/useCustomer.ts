@@ -1,4 +1,5 @@
-// src/hooks/useCustomer.ts
+"use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Customer } from "@/types/customer";
 import { customerService } from "@/services/customers/customerService";
@@ -12,11 +13,18 @@ interface UseCustomersResult {
   error: string | null;
   search: string;
   setSearch: (s: string) => void;
-  fetchCustomers: () => Promise<void>;
+
+  page: number;
+  setPage: (p: number) => void;
+  limit: number;
+  total: number;
+
+  fetchCustomers: (page?: number) => Promise<void>;
   fetchCustomerById: (id: string) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
 }
 
+/** 🧩 Hook quản lý danh sách và chi tiết Customers */
 export const useCustomers = (): UseCustomersResult => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -26,29 +34,46 @@ export const useCustomers = (): UseCustomersResult => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // === Lấy tất cả khách hàng ===
-  const fetchCustomers = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await customerService.getAllCustomers();
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
-      // Sắp xếp theo createdAt giảm dần (mới nhất lên đầu)
-      const sorted = data.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+  /** 🔵 Lấy danh sách khách hàng (phân trang) */
+  const fetchCustomers = useCallback(
+    async (pageNumber: number = page) => {
+      try {
+        setLoading(true);
+        const res = await customerService.getAllCustomers({
+          page: pageNumber,
+          limit,
+        });
 
-      setCustomers(sorted);
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Lỗi khi tải danh sách khách hàng:", err);
-      setError(err?.message || "Không thể tải danh sách khách hàng từ API.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        // Sắp xếp theo createdAt giảm dần
+        const sorted = (res.items ?? []).sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
-  // === Lấy chi tiết khách hàng theo ID ===
+        setCustomers(sorted);
+        setTotal(res.total ?? 0);
+
+        // Cập nhật page/limit từ BE nếu có
+        if (typeof res.page === "number") setPage(res.page);
+        if (typeof res.limit === "number") setLimit(res.limit);
+
+        setError(null);
+      } catch (err: any) {
+        console.error("❌ Lỗi khi tải danh sách khách hàng:", err);
+        setError(err?.message || "Không thể tải danh sách khách hàng.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, limit]
+  );
+
+  /** 🟢 Lấy chi tiết khách hàng theo ID */
   const fetchCustomerById = useCallback(async (id: string) => {
     try {
       setLoading(true);
@@ -63,7 +88,7 @@ export const useCustomers = (): UseCustomersResult => {
     }
   }, []);
 
-  // === Xóa khách hàng ===
+  /** 🔴 Xóa khách hàng */
   const handleDelete = useCallback(
     async (id: string) => {
       const confirm = await Swal.fire({
@@ -81,7 +106,7 @@ export const useCustomers = (): UseCustomersResult => {
         setLoading(true);
         await customerService.deleteCustomer(id);
         Swal.fire("Đã xóa!", "Khách hàng đã bị xóa thành công.", "success");
-        await fetchCustomers();
+        await fetchCustomers(page);
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa khách hàng:", err);
         Swal.fire("Lỗi", err?.message || "Không thể xóa khách hàng", "error");
@@ -89,25 +114,25 @@ export const useCustomers = (): UseCustomersResult => {
         setLoading(false);
       }
     },
-    [fetchCustomers]
+    [fetchCustomers, page]
   );
 
-  // === Lọc danh sách client-side ===
+  /** 🧮 Lọc danh sách client-side */
   const filteredCustomers = useMemo(() => {
     if (!search) return customers;
-    const lowercasedSearch = search.toLowerCase();
+    const lower = search.toLowerCase();
     return customers.filter(
       (c) =>
-        c.fullName.toLowerCase().includes(lowercasedSearch) ||
-        c.phone.toLowerCase().includes(lowercasedSearch) ||
-        c.email.toLowerCase().includes(lowercasedSearch)
+        c.fullName.toLowerCase().includes(lower) ||
+        c.phone.toLowerCase().includes(lower) ||
+        c.email.toLowerCase().includes(lower)
     );
   }, [customers, search]);
 
-  // === Load lần đầu ===
+  /** 🪄 Load lần đầu */
   useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+    fetchCustomers(page);
+  }, [fetchCustomers, page]);
 
   return {
     customers,
@@ -117,6 +142,10 @@ export const useCustomers = (): UseCustomersResult => {
     error,
     search,
     setSearch,
+    page,
+    setPage,
+    limit,
+    total,
     fetchCustomers,
     fetchCustomerById,
     handleDelete,

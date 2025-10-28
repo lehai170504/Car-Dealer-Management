@@ -1,4 +1,5 @@
-// src/hooks/useContracts.ts
+"use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Contract } from "@/types/contracts";
 import { contractService } from "@/services/contracts/contractService";
@@ -12,12 +13,18 @@ interface UseContractsResult {
   error: string | null;
   search: string;
   setSearch: (s: string) => void;
-  fetchContracts: () => Promise<void>;
+
+  page: number;
+  setPage: (p: number) => void;
+  limit: number;
+  total: number;
+
+  fetchContracts: (page?: number) => Promise<void>;
   fetchContractById: (id: string) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
 }
 
-/** Hook quản lý danh sách và chi tiết Contracts */
+/** 🧩 Hook quản lý danh sách & chi tiết Contracts (phân trang + CRUD) */
 export const useContracts = (): UseContractsResult => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(
@@ -27,29 +34,41 @@ export const useContracts = (): UseContractsResult => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // === Lấy danh sách contracts ===
-  const fetchContracts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await contractService.getAllContracts();
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
-      // Sắp xếp theo createdAt giảm dần
-      const sorted = data.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+  /** 🔵 Lấy danh sách contracts (phân trang) */
+  const fetchContracts = useCallback(
+    async (pageNumber: number = page) => {
+      try {
+        setLoading(true);
 
-      setContracts(sorted);
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Lỗi khi tải danh sách contracts:", err);
-      setError(err?.message || "Không thể tải danh sách contracts từ API.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        const res = await contractService.getAllContracts({
+          page: pageNumber,
+          limit,
+        });
 
-  // === Lấy chi tiết contract theo ID ===
+        setContracts(res.items ?? []);
+        setTotal(res.total ?? 0);
+
+        // Cập nhật từ BE nếu có
+        if (typeof res.page === "number") setPage(res.page);
+        if (typeof res.limit === "number") setLimit(res.limit);
+
+        setError(null);
+      } catch (err: any) {
+        console.error("❌ Lỗi khi tải danh sách contracts:", err);
+        setError(err?.message || "Không thể tải danh sách contracts.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, limit]
+  );
+
+  /** 🟢 Lấy chi tiết contract theo ID */
   const fetchContractById = useCallback(async (id: string) => {
     try {
       setLoading(true);
@@ -64,7 +83,7 @@ export const useContracts = (): UseContractsResult => {
     }
   }, []);
 
-  // === Xóa contract ===
+  /** 🔴 Xóa contract */
   const handleDelete = useCallback(
     async (id: string) => {
       const confirm = await Swal.fire({
@@ -83,7 +102,7 @@ export const useContracts = (): UseContractsResult => {
         setLoading(true);
         await contractService.deleteContract(id);
         Swal.fire("Đã xóa!", "Contract đã bị xóa thành công.", "success");
-        await fetchContracts();
+        await fetchContracts(page);
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa contract:", err);
         Swal.fire("Lỗi", err?.message || "Không thể xóa contract", "error");
@@ -91,25 +110,25 @@ export const useContracts = (): UseContractsResult => {
         setLoading(false);
       }
     },
-    [fetchContracts]
+    [fetchContracts, page]
   );
 
-  // === Lọc danh sách client-side ===
+  /** 🧮 Lọc danh sách client-side */
   const filteredContracts = useMemo(() => {
     if (!search) return contracts;
-    const lowercased = search.toLowerCase();
+    const lower = search.toLowerCase();
     return contracts.filter(
       (c) =>
-        c.contractNo.toLowerCase().includes(lowercased) ||
-        c.status.toLowerCase().includes(lowercased) ||
-        c.order.toLowerCase().includes(lowercased)
+        c.contractNo?.toLowerCase().includes(lower) ||
+        c.status?.toLowerCase().includes(lower) ||
+        c.order?.toLowerCase().includes(lower)
     );
   }, [contracts, search]);
 
-  // === Gọi lần đầu ===
+  /** 🪄 Gọi lần đầu */
   useEffect(() => {
-    fetchContracts();
-  }, [fetchContracts]);
+    fetchContracts(page);
+  }, [fetchContracts, page]);
 
   return {
     contracts,
@@ -119,6 +138,10 @@ export const useContracts = (): UseContractsResult => {
     error,
     search,
     setSearch,
+    page,
+    setPage,
+    limit,
+    total,
     fetchContracts,
     fetchContractById,
     handleDelete,

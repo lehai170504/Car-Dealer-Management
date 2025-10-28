@@ -11,10 +11,23 @@ const endpoint = "/contracts";
 
 export const contractService = {
   /** 🟦 Lấy danh sách contracts */
-  getAllContracts: async (): Promise<Contract[]> => {
+  getAllContracts: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<ContractListResponse> => {
     try {
-      const res = await axiosInstance.get<ContractListResponse>(endpoint);
-      return res.data?.items || [];
+      const res = await axiosInstance.get<ContractListResponse>(endpoint, {
+        params,
+      });
+
+      // Đảm bảo dữ liệu trả về luôn có cấu trúc đầy đủ
+      const data = res.data || {};
+      return {
+        items: data.items || [],
+        total: data.total ?? 0,
+        page: data.page ?? params?.page ?? 1,
+        limit: data.limit ?? params?.limit ?? 10,
+      };
     } catch (error: any) {
       console.error("❌ Error fetching contracts:", error);
       throw new Error(

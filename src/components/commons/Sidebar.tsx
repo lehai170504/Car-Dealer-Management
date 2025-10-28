@@ -32,18 +32,18 @@ const SIMULATED_PATH = "/evm/dashboard";
 const dealerManagerMenu: NavItem[] = [
   {
     title: "Dashboard",
-    href: "/dealer/dashboard",
+    href: "/admin/dashboard",
     icon: <BarChart className="h-4 w-4" />,
-  },
-  {
-    title: "Quản lý Xe",
-    href: "/dealer/catalog",
-    icon: <Car className="h-4 w-4" />,
   },
   {
     title: "Bán hàng",
     href: "/dealer/sales",
     icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    title: "Quản lý Đại lí",
+    href: "/admin/dealer",
+    icon: <Users className="h-4 w-4" />,
   },
   {
     title: "Quản lý Hàng tồn kho",
@@ -88,7 +88,7 @@ const evmStaffMenu: NavItem[] = [
   },
   {
     title: "Sản phẩm & Phân phối",
-    href: "/evm/products",
+    href: "/admin/products",
     icon: <Car className="h-4 w-4" />,
   },
   {
@@ -108,6 +108,11 @@ const adminMenu: NavItem[] = [
     title: "Quản lý Đại lí",
     href: "/admin/dealer",
     icon: <Users className="h-4 w-4" />,
+  },
+  {
+    title: "Sản phẩm & Phân phối",
+    href: "/admin/products",
+    icon: <Car className="h-4 w-4" />,
   },
   {
     title: "Quản lý Hàng tồn kho",

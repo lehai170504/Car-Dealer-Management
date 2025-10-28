@@ -11,10 +11,23 @@ const endpoint = "/orders";
 
 export const orderService = {
   /** 🟦 Lấy danh sách orders */
-  getAllOrders: async (): Promise<Order[]> => {
+  getAllOrders: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<OrderListResponse> => {
     try {
-      const res = await axiosInstance.get<OrderListResponse>(endpoint);
-      return res.data?.items || [];
+      const res = await axiosInstance.get<OrderListResponse>(endpoint, {
+        params,
+      });
+
+      // Đảm bảo dữ liệu có đủ structure
+      const data = res.data || {};
+      return {
+        items: data.items || [],
+        total: data.total ?? 0,
+        page: data.page ?? params?.page ?? 1,
+        limit: data.limit ?? params?.limit ?? 10,
+      };
     } catch (error: any) {
       console.error("❌ Error fetching orders:", error);
       throw new Error(

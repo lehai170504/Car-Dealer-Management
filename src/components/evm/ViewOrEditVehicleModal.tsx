@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, Pencil, CheckCircle2, XCircle } from "lucide-react";
-import { Vehicle } from "@/types/vehicle";
+import { Vehicle } from "@/types/vehicles";
 import { useUpdateVehicle } from "@/hooks/useUpdateVehicle"; // ✅ import hook
 
 interface ViewOrEditVehicleModalProps {

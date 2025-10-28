@@ -1,4 +1,3 @@
-// src/hooks/useAuth.ts
 "use client";
 
 import { useState } from "react";
@@ -26,9 +25,9 @@ export const useLogin = (): UseLoginResult => {
     try {
       const response: LoginResponse = await login(credentials);
 
-      setAuthData(response.user, response.token);
+      setAuthData(response.user, response.token, response.refreshToken);
 
-      const role = response.user.role;
+      const role = response.user.role?.trim();
       switch (role) {
         case "Admin":
           router.push("/admin/dashboard");

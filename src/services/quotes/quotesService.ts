@@ -11,10 +11,22 @@ const endpoint = "/quotes";
 
 export const quotesService = {
   /** Lấy danh sách quotes */
-  getAllQuotes: async (): Promise<Quote[]> => {
+  getAllQuotes: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<QuoteListResponse> => {
     try {
-      const res = await axiosInstance.get<QuoteListResponse>(endpoint);
-      return res.data?.items || [];
+      const res = await axiosInstance.get<QuoteListResponse>(endpoint, {
+        params,
+      });
+
+      const data = res.data || {};
+      return {
+        items: data.items || [],
+        total: data.total ?? 0,
+        page: data.page ?? params?.page ?? 1,
+        limit: data.limit ?? params?.limit ?? 10,
+      };
     } catch (error: any) {
       console.error("❌ Error fetching quotes:", error);
       throw new Error(

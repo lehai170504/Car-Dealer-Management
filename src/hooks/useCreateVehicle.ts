@@ -1,59 +1,60 @@
+// src/hooks/useCreateVehicle.ts
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { vehicleService } from "@/services/vehicles/vehicleService";
-import { Vehicle } from "@/types/vehicle";
+import { CreateVehicleRequest } from "@/types/vehicles";
 
-// Khi tạo mới, ta bỏ qua các trường do backend tự sinh ra
-export type NewVehiclePayload = Omit<
-  Vehicle,
-  "_id" | "createdAt" | "updatedAt"
->;
+const initialForm: CreateVehicleRequest = {
+  model: "",
+  trim: "",
+  battery: "",
+  range: 0,
+  motorPower: 0,
+  features: [],
+  msrp: 0,
+  images: [],
+  active: true,
+};
 
 export const useCreateVehicle = () => {
-  const initialState: NewVehiclePayload = {
-    model: "",
-    version: "",
-    color: "",
-    features: [],
-    price: 0,
-  };
-
-  const [newVehicleForm, setNewVehicleForm] =
-    useState<NewVehiclePayload>(initialState);
+  const [vehicleForm, setVehicleForm] =
+    useState<CreateVehicleRequest>(initialForm);
   const [isCreateLoading, setIsCreateLoading] = useState(false);
 
-  /** Set field */
-  const setNewVehicleField = (key: keyof NewVehiclePayload, value: any) => {
-    setNewVehicleForm((prev) => ({
+  // Cập nhật trường form
+  const setVehicleField = <K extends keyof CreateVehicleRequest>(
+    key: K,
+    value: CreateVehicleRequest[K]
+  ) => {
+    setVehicleForm((prev) => ({
       ...prev,
-      [key]:
-        key === "features"
-          ? Array.isArray(value)
-            ? value
-            : value
-                .split(",")
-                .map((f: string) => f.trim())
-                .filter((f: string) => f.length > 0)
-          : value,
+      [key]: value,
     }));
   };
 
-  /** Reset form */
-  const resetCreateForm = () => {
-    setNewVehicleForm(initialState);
-  };
+  // Reset form về trạng thái ban đầu
+  const resetVehicleForm = () => setVehicleForm(initialForm);
 
-  /** Handle create submit */
+  // Xử lý submit tạo vehicle
   const handleCreateSubmit = async (
     onClose: () => void,
     onSuccess: () => void
-  ): Promise<boolean> => {
-    const { model, version, color } = newVehicleForm;
+  ) => {
+    const { model, trim, battery, range, motorPower, features, msrp, images } =
+      vehicleForm;
 
-    if (!model || !version || !color) {
+    // Validate các trường bắt buộc
+    if (
+      !model ||
+      !trim ||
+      !battery ||
+      range <= 0 ||
+      motorPower <= 0 ||
+      msrp <= 0
+    ) {
       Swal.fire(
         "Thiếu thông tin",
-        "Vui lòng nhập đầy đủ Model, Version và Màu xe!",
+        "Vui lòng điền đầy đủ tất cả các trường bắt buộc!",
         "warning"
       );
       return false;
@@ -61,16 +62,15 @@ export const useCreateVehicle = () => {
 
     try {
       setIsCreateLoading(true);
-      await vehicleService.createVehicle(newVehicleForm);
-      Swal.fire("Thành công!", "Xe mới đã được thêm vào hệ thống.", "success");
-
-      resetCreateForm();
+      await vehicleService.createVehicle(vehicleForm);
+      Swal.fire("Thành công!", "Đã thêm Vehicle mới.", "success");
+      resetVehicleForm();
       onClose();
       onSuccess();
       return true;
     } catch (error: any) {
       console.error(error);
-      Swal.fire("Lỗi", error?.message || "Không thể tạo xe mới.", "error");
+      Swal.fire("Lỗi", error?.message || "Không thể tạo Vehicle.", "error");
       return false;
     } finally {
       setIsCreateLoading(false);
@@ -78,10 +78,10 @@ export const useCreateVehicle = () => {
   };
 
   return {
-    newVehicleForm,
-    setNewVehicleField,
+    vehicleForm,
+    setVehicleField,
+    resetVehicleForm,
     isCreateLoading,
     handleCreateSubmit,
-    resetCreateForm,
   };
 };

@@ -5,10 +5,26 @@ const endpoint = "/dealers";
 
 export const dealerService = {
   /** Get all dealers */
-  getAllDealers: async (): Promise<Dealer[]> => {
+  getAllDealers: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    items: Dealer[];
+    total: number;
+    page: number;
+    limit: number;
+  }> => {
     try {
-      const res = await axiosInstance.get(endpoint);
-      return res.data?.items || [];
+      const res = await axiosInstance.get(endpoint, { params });
+
+      const data = res.data || {};
+
+      return {
+        items: data.items || [],
+        total: data.total ?? 0,
+        page: data.page ?? params?.page ?? 1,
+        limit: data.limit ?? params?.limit ?? 10,
+      };
     } catch (error: any) {
       console.error("❌ Error fetching dealers:", error);
       throw new Error(

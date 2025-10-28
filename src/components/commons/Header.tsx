@@ -144,6 +144,24 @@ export function Header({ title }: HeaderProps) {
 
             <DropdownMenuItem
               className="cursor-pointer text-gray-200 hover:bg-gray-700 focus:bg-gray-700"
+              onClick={() => {
+                if (userRole.toLowerCase().includes("evm"))
+                  router.push("/evm/profile");
+                else if (userRole.toLowerCase().includes("dealer"))
+                  router.push("/dealer/profile");
+                else if (userRole.toLowerCase().includes("admin"))
+                  router.push("/admin/profile");
+                else router.push("/auth/login");
+              }}
+            >
+              <User className={`mr-2 h-4 w-4 ${primaryColor}`} />
+              Hồ sơ của tôi
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator className="bg-gray-700" />
+
+            <DropdownMenuItem
+              className="cursor-pointer text-gray-200 hover:bg-gray-700 focus:bg-gray-700"
               onClick={handleSettingsClick}
             >
               <Settings className={`mr-2 h-4 w-4 ${primaryColor}`} />

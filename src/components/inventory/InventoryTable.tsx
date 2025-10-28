@@ -16,7 +16,7 @@ import { CreateInventoryModal } from "./CreateInventoryModal";
 import { ViewInventoryModal } from "./ViewInventoryModal";
 import { Inventory } from "@/types/inventory";
 import { useInventory } from "@/hooks/useInventory";
-import { useAuth } from "@/context/AuthContext"; // ✅ thêm
+import { useAuth } from "@/context/AuthContext";
 
 type UserRole = "Admin" | "DealerManager" | "DealerStaff" | "EVMStaff";
 
@@ -31,7 +31,7 @@ export function InventoryTable() {
     handleDelete,
   } = useInventory();
 
-  const { user } = useAuth(); // ✅ lấy user từ context
+  const { user } = useAuth();
   const role = user?.role as UserRole | null;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -53,6 +53,12 @@ export function InventoryTable() {
             className="pl-10 bg-gray-700 border-gray-600 text-gray-50 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-green-500"
           />
         </div>
+
+        {canViewOnly && (
+          <p className="text-yellow-400 text-sm">
+            Bạn chỉ có quyền xem dữ liệu tồn kho.
+          </p>
+        )}
 
         {/* ✅ Chỉ hiển thị nút thêm nếu được phép chỉnh sửa */}
         {canModify && (

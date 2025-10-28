@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Swal from "sweetalert2";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -11,26 +13,80 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Loader2, Briefcase } from "lucide-react";
+import { User, Mail, Loader2, Briefcase, RefreshCw } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useState } from "react";
+import { useRefreshToken } from "@/hooks/useRefreshToken";
 
 export default function Dealer_ProfilePage() {
   const { userProfile, isLoading, error, userName, setUserName } =
     useUserProfile();
-  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSaveProfile = () => {
-    console.log("Đang lưu thông tin Đại lý:", { name: userName });
+  const [isSaving, setIsSaving] = useState(false);
+  const { refresh, loading: isRefreshing } = useRefreshToken();
+
+  /** 🔹 Lưu thông tin profile */
+  const handleSaveProfile = async () => {
     setIsSaving(true);
-    setTimeout(() => {
+
+    try {
+      console.log("Đang lưu thông tin Đại lý:", { name: userName });
+
+      // Giả lập gọi API
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      Swal.fire({
+        icon: "success",
+        title: "Cập nhật thành công!",
+        text: "Thông tin đại lý của bạn đã được lưu.",
+        confirmButtonColor: "#0ea5e9",
+        background: "#1f2937",
+        color: "#f3f4f6",
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Lỗi!",
+        text: "Không thể lưu thông tin. Vui lòng thử lại.",
+        confirmButtonColor: "#ef4444",
+        background: "#1f2937",
+        color: "#f3f4f6",
+      });
+    } finally {
       setIsSaving(false);
-      console.log("Lưu thông tin thành công!");
-    }, 1500);
+    }
   };
 
+  /** 🔹 Làm mới token */
+  const handleRefreshToken = async () => {
+    const result = await refresh();
+
+    if (result) {
+      console.log("🔄 Token mới:", result.token);
+      console.log("👤 User:", result.user);
+
+      Swal.fire({
+        icon: "success",
+        title: "Làm mới token thành công!",
+        text: "Hệ thống đã cấp token mới cho bạn.",
+        confirmButtonColor: "#0ea5e9",
+        background: "#1f2937",
+        color: "#f3f4f6",
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Làm mới token thất bại!",
+        text: "Phiên đăng nhập của bạn có thể đã hết hạn. Vui lòng đăng nhập lại.",
+        confirmButtonColor: "#ef4444",
+        background: "#1f2937",
+        color: "#f3f4f6",
+      });
+    }
+  };
+
+  // ================== Loading / Error ==================
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900 text-gray-100">
@@ -52,11 +108,32 @@ export default function Dealer_ProfilePage() {
     );
   }
 
+  // ================== UI chính ==================
   return (
     <div className="space-y-8 px-4 py-6 md:px-10 md:py-8 bg-gray-900 min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-100">
-        Profile & Thông tin Đại lý ({userProfile.role})
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-100">
+          Profile & Thông tin Đại lý ({userProfile.role})
+        </h1>
+
+        <Button
+          onClick={handleRefreshToken}
+          disabled={isRefreshing}
+          variant="outline"
+          className="text-sky-400 border-sky-600 hover:bg-sky-600 hover:text-white bg-gray-700"
+        >
+          {isRefreshing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Đang làm mới...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" /> Làm mới Token
+            </>
+          )}
+        </Button>
+      </div>
+
       <p className="text-gray-400">
         Quản lý tài khoản cá nhân và chi tiết đại lý.
       </p>
@@ -145,8 +222,6 @@ export default function Dealer_ProfilePage() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        {/* Tabs dealer-info và security có thể chỉnh tương tự */}
       </Tabs>
     </div>
   );

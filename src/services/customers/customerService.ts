@@ -11,11 +11,22 @@ const endpoint = "/customers";
 
 export const customerService = {
   /** Lấy danh sách khách hàng (trả về mảng Customer) */
-  getAllCustomers: async (): Promise<Customer[]> => {
+  getAllCustomers: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<CustomerListResponse> => {
     try {
-      const res = await axiosInstance.get<CustomerListResponse>(endpoint);
-      // Trả về mảng items từ API
-      return res.data?.items || [];
+      const res = await axiosInstance.get<CustomerListResponse>(endpoint, {
+        params,
+      });
+
+      const data = res.data || {};
+      return {
+        items: data.items || [],
+        total: data.total ?? 0,
+        page: data.page ?? params?.page ?? 1,
+        limit: data.limit ?? params?.limit ?? 10,
+      };
     } catch (error: any) {
       console.error("❌ Error fetching customers:", error);
       throw new Error(

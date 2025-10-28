@@ -11,10 +11,27 @@ const endpoint = "/test-drives";
 
 export const testDriveService = {
   /** 🟦 Lấy danh sách test drives */
-  getAllTestDrives: async (): Promise<TestDrive[]> => {
+  getAllTestDrives: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    items: TestDrive[];
+    total: number;
+    page: number;
+    limit: number;
+  }> => {
     try {
-      const res = await axiosInstance.get<TestDriveListResponse>(endpoint);
-      return res.data?.items || [];
+      const res = await axiosInstance.get<TestDriveListResponse>(endpoint, {
+        params,
+      });
+
+      const data = res.data || {};
+      return {
+        items: data.items || [],
+        total: data.total ?? 0,
+        page: data.page ?? params?.page ?? 1,
+        limit: data.limit ?? params?.limit ?? 10,
+      };
     } catch (error: any) {
       console.error("❌ Error fetching test drives:", error);
       throw new Error(

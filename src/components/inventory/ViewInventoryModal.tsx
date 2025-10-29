@@ -98,8 +98,7 @@ export function ViewInventoryModal({
               <strong>ID:</strong> {inventory._id}
             </p>
             <p className="text-sm">
-              <strong>Chủ sở hữu:</strong> {inventory.owner.name} (
-              {inventory.ownerType})
+              <strong>Chủ sở hữu:</strong> {inventory.ownerType}
             </p>
             <p className="text-sm">
               <strong>Biến thể:</strong> {inventory.variant.trim}

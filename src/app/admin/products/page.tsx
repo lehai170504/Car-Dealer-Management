@@ -1,14 +1,11 @@
-// src/components/evm/EVM_ProductPage.tsx
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 // Import các component EVM (đã được chỉnh sửa sang Dark Theme)
 import { VehicleGroupTabsTable } from "@/components/products/VehicleMasterTable";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
-import { EVM_PricingPolicyTable } from "@/components/evm/PricingPolicyTable";
+import { PromotionTable } from "@/components/promotions/PromotionTable";
 
 export default function EVM_ProductPage() {
   return (
@@ -19,13 +16,6 @@ export default function EVM_ProductPage() {
         <h1 className="text-3xl font-bold text-gray-50">
           Quản lý Sản phẩm (EVM)
         </h1>
-        <Button
-          onClick={() => console.log("Tạo Model/Chính sách mới")}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Tạo Mới
-        </Button>
       </div>
 
       {/* Tabs Component với Dark Theme */}
@@ -72,7 +62,7 @@ export default function EVM_ProductPage() {
           <h2 className="text-xl font-semibold mb-4 text-gray-50">
             Thiết lập Chính sách Giá và Khuyến mãi
           </h2>
-          <EVM_PricingPolicyTable />
+          <PromotionTable />
         </TabsContent>
       </Tabs>
     </div>

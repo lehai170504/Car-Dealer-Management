@@ -65,9 +65,9 @@ export function CreateInventoryModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-xl bg-gray-800 text-gray-50 border-gray-700">
+      <DialogContent className="sm:max-w-xl bg-gray-800 text-sky-50 border-gray-700">
         <DialogHeader className="border-b border-gray-700 pb-4">
-          <DialogTitle className="text-xl">
+          <DialogTitle className="text-xl text-sky-500">
             Thêm Bản ghi Tồn kho Mới
           </DialogTitle>
         </DialogHeader>
@@ -185,14 +185,14 @@ export function CreateInventoryModal({
             variant="outline"
             onClick={handleClose}
             disabled={loading}
-            className="border-gray-600 text-gray-400 hover:bg-gray-700"
+            className="border-gray-600 text-gray-600 hover:bg-gray-700"
           >
             Hủy
           </Button>
           <Button
             onClick={handleFormSubmit}
             disabled={loading}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-sky-600 hover:bg-sky-700"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -175,7 +175,7 @@ export function CreateQuoteModal({
               onOpenChange(false);
               createHook.resetForm();
             }}
-            className="hover:bg-gray-700 text-neutral-200"
+            className="hover:bg-gray-700 text-neutral-600"
           >
             Hủy
           </Button>

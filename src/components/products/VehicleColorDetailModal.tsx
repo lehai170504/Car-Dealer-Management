@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import type { VehicleColor } from "@/types/vehicleColors";
 import { useUpdateVehicleColor } from "@/hooks/useUpdateVehicleColor";
+import { FormattedNumberInput } from "../commons/FormattedNumberInput";
 
 interface VehicleColorDetailModalProps {
   color: VehicleColor | null;
@@ -86,13 +87,10 @@ export function VehicleColorDetailModal({
           {/* Extra Price */}
           <div className="space-y-1">
             <label className={labelClass}>Extra Price</label>
-            <Input
-              type="number"
+            <FormattedNumberInput
+              label="Extra Price"
               value={updateHook.formData.extraPrice}
-              onChange={(e) =>
-                updateHook.handleChange("extraPrice", Number(e.target.value))
-              }
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
+              onChange={(val) => updateHook.handleChange("extraPrice", val)}
             />
           </div>
 

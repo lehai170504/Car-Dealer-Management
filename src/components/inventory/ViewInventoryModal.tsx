@@ -88,7 +88,7 @@ export function ViewInventoryModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-xl bg-gray-800 text-gray-50 border-gray-700">
         <DialogHeader className="border-b border-gray-700 pb-4">
-          <DialogTitle className="text-xl">
+          <DialogTitle className="text-xl text-sky-500">
             {editMode && canEdit ? "Chỉnh sửa Tồn kho" : "Chi tiết Tồn kho"}
           </DialogTitle>
         </DialogHeader>
@@ -181,7 +181,7 @@ export function ViewInventoryModal({
               <Button
                 onClick={handleFormUpdate}
                 disabled={loading}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-sky-600 hover:bg-sky-700"
               >
                 {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

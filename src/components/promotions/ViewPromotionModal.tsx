@@ -29,7 +29,7 @@ import {
 interface ViewPromotionModalProps {
   promotion: Promotion;
   isOpen: boolean;
-  onClose: () => void; // đổi từ onOpenChange
+  onClose: () => void;
   onUpdated: () => void;
 }
 

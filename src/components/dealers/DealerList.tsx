@@ -129,7 +129,7 @@ export function DealerTable() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-emerald-400 hover:bg-gray-700 hover:border-emerald-500"
+                        className="border-gray-600 text-sky-400 hover:bg-gray-700 hover:border-sky-500 bg-gray-600"
                         onClick={() => {
                           setSelectedDealer(dealer);
                           setViewModalOpen(true);
@@ -140,7 +140,7 @@ export function DealerTable() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-red-400 hover:bg-gray-700 hover:border-red-500"
+                        className="border-gray-600 text-red-400 hover:bg-gray-700 bg-gray-600 hover:border-red-500"
                         onClick={() => handleDelete(dealer._id!)}
                       >
                         <Trash2 className="h-4 w-4" />

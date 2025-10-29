@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dealer, DealerContact, DealerStatus } from "@/types/dealer";
 import { useUpdateDealer } from "@/hooks/useUpdateDealer";
+import { FormattedNumberInput } from "../commons/FormattedNumberInput";
 
 interface ViewDealerModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export function ViewDealerModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg bg-gray-800 text-gray-100">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-emerald-400">
+          <DialogTitle className="text-xl font-semibold text-sky-400">
             Thông tin Đại lý
           </DialogTitle>
         </DialogHeader>
@@ -109,27 +110,34 @@ export function ViewDealerModal({
 
           {/* Credit Limit & Status */}
           <div className="grid grid-cols-2 gap-4">
-            <Input
-              type="number"
-              placeholder="Credit Limit (VNĐ)"
-              value={formData.creditLimit}
-              disabled={!editMode}
-              onChange={(e) =>
-                handleChange("creditLimit", Number(e.target.value))
-              }
-              className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-emerald-500"
-            />
-            <select
-              value={formData.status}
-              disabled={!editMode}
-              onChange={(e) =>
-                handleChange("status", e.target.value as DealerStatus)
-              }
-              className="bg-gray-700 border-gray-600 text-gray-100 px-2 py-1 rounded"
-            >
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Ngưng hoạt động</option>
-            </select>
+            {/* Credit Limit */}
+            <div className="space-y-1">
+              <FormattedNumberInput
+                label="Credit Limit (VNĐ)"
+                value={formData.creditLimit}
+                onChange={(val) => handleChange("creditLimit", val)}
+                className="bg-gray-700 border border-gray-600 text-gray-100 placeholder:text-gray-400 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="Credit Limit (VNĐ)"
+              />
+            </div>
+
+            {/* Status */}
+            <div className="space-y-1">
+              <label className="block text-gray-300 font-medium mb-1">
+                Trạng thái
+              </label>
+              <select
+                value={formData.status}
+                disabled={!editMode}
+                onChange={(e) =>
+                  handleChange("status", e.target.value as DealerStatus)
+                }
+                className="w-full bg-gray-700 border border-gray-600 text-gray-100 px-3 py-2 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-60"
+              >
+                <option value="active">Đang hoạt động</option>
+                <option value="inactive">Ngưng hoạt động</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -139,14 +147,14 @@ export function ViewDealerModal({
               <Button
                 variant="outline"
                 onClick={cancelEdit}
-                className="border-gray-600 text-gray-300 hover:bg-gray-700/40"
+                className="border-gray-600 text-gray-600 hover:bg-gray-700/40"
               >
                 Hủy
               </Button>
               <Button
                 onClick={() => handleUpdate(onUpdated, onClose)}
                 disabled={isUpdateLoading}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-sky-600 hover:bg-sky-700 text-white"
               >
                 {isUpdateLoading ? "Đang lưu..." : "Lưu thay đổi"}
               </Button>
@@ -154,7 +162,7 @@ export function ViewDealerModal({
           ) : (
             <Button
               onClick={() => setEditMode(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-sky-600 hover:bg-sky-700 text-white"
             >
               Chỉnh sửa
             </Button>

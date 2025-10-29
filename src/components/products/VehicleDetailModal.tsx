@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUpdateVehicle } from "@/hooks/useUpdateVehicle";
+import { FormattedNumberInput } from "@/components/commons/FormattedNumberInput";
 import type { Vehicle } from "@/types/vehicles";
 
 interface VehicleDetailModalProps {
@@ -112,14 +113,10 @@ export function VehicleDetailModal({
 
           {/* MSRP */}
           <div className="space-y-1">
-            <label className={labelClass}>MSRP ($)</label>
-            <Input
-              type="number"
+            <FormattedNumberInput
+              label="MSRP ($)"
               value={updateHook.formData.msrp}
-              onChange={(e) =>
-                updateHook.handleChange("msrp", Number(e.target.value))
-              }
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
+              onChange={(val) => updateHook.handleChange("msrp", val)}
             />
           </div>
 

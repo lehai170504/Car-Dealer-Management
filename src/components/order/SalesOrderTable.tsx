@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash, Eye, Search, Plus } from "lucide-react";
+import { Loader2, Eye, Search, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useOrders } from "@/hooks/useOrders";
 import { OrderDetailModal } from "./OrderDetailModal";
@@ -154,7 +154,7 @@ export function OrderTable() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-sky-400 hover:bg-gray-700 hover:border-sky-500"
+                        className="border-gray-600 text-sky-400 hover:bg-gray-700 bg-gray-600 hover:border-sky-500"
                         onClick={() => {
                           setSelectedOrder(order);
                           setDetailModalOpen(true);
@@ -165,10 +165,10 @@ export function OrderTable() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-red-400 hover:bg-gray-700 hover:border-red-500"
+                        className="border-gray-600 text-red-400 bg-gray-600 hover:bg-gray-700 hover:border-red-500"
                         onClick={() => handleDelete(order._id)}
                       >
-                        <Trash className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

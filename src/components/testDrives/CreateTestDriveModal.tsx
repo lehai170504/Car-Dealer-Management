@@ -129,14 +129,14 @@ export function CreateTestDriveModal({
               createHook.resetForm();
               onOpenChange(false);
             }}
-            className="hover:bg-gray-700"
+            className="hover:bg-gray-700 text-gray-600"
           >
             Hủy
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={createHook.loading}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-sky-600 hover:bg-sky-700"
           >
             {createHook.loading && (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />

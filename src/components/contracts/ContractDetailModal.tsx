@@ -159,7 +159,7 @@ export const ContractDetailModal = ({
           <Button
             onClick={handleSave}
             disabled={updateHook.loading}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-sky-600 hover:bg-sky-700"
           >
             {updateHook.loading && (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />

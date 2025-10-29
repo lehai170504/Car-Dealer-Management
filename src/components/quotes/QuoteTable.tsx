@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash, Plus, Search, Eye } from "lucide-react";
+import { Loader2, Plus, Search, Eye, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuotes } from "@/hooks/useQuotes";
 import { CreateQuoteModal } from "./CreateQuoteModal";
@@ -151,7 +151,7 @@ export function QuoteTable() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-sky-400 hover:bg-gray-700 hover:border-sky-500"
+                        className="border-gray-600 text-sky-400 hover:bg-gray-700 bg-gray-600 hover:border-sky-500"
                         onClick={() => {
                           setSelectedQuote(quote);
                           setDetailModalOpen(true);
@@ -162,10 +162,10 @@ export function QuoteTable() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-red-400 hover:bg-gray-700 hover:border-red-500"
+                        className="border-gray-600 text-red-400 bg-gray-600 hover:bg-gray-700 hover:border-red-500"
                         onClick={() => handleDelete(quote._id)}
                       >
-                        <Trash className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

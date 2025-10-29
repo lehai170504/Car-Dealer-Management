@@ -10,7 +10,7 @@ export default function EVM_DealerPage() {
     <div className="space-y-6 text-gray-100">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-50">Quản lý Đại lý</h1>
+        <h1 className="text-3xl font-bold text-sky-500">Quản lý Đại lý</h1>
       </div>
 
       {/* Tabs */}

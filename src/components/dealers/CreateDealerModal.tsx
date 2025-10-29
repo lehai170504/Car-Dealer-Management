@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useCreateDealer } from "@/hooks/useCreateDealer";
 import { DealerContact, DealerStatus } from "@/types/dealer";
+import { FormattedNumberInput } from "../commons/FormattedNumberInput";
 
 interface CreateDealerModalProps {
   open: boolean;
@@ -43,7 +44,7 @@ export function CreateDealerModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg bg-gray-800 text-gray-100 border border-gray-700">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-emerald-400">
+          <DialogTitle className="text-2xl font-bold text-sky-400">
             Thêm Đại lý Mới
           </DialogTitle>
         </DialogHeader>
@@ -133,20 +134,17 @@ export function CreateDealerModal({
 
           {/* Credit Limit & Status */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-gray-300">Credit Limit (VNĐ)</Label>
-              <Input
-                type="number"
-                value={dealerForm.creditLimit}
-                onChange={(e) =>
-                  setDealerField("creditLimit", Number(e.target.value))
-                }
-                placeholder="VD: 10000000"
-                className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400"
-                required
-              />
-            </div>
+            {/* Credit Limit */}
+            <FormattedNumberInput
+              label="Credit Limit (VNĐ)"
+              value={dealerForm.creditLimit}
+              onChange={(val) => setDealerField("creditLimit", val)}
+              placeholder="VD: 10,000,000"
+              className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400"
+              labelClassName="text-gray-300 font-medium"
+            />
 
+            {/* Status */}
             <div>
               <Label className="text-gray-300">Trạng thái</Label>
               <select
@@ -154,7 +152,7 @@ export function CreateDealerModal({
                 onChange={(e) =>
                   setDealerField("status", e.target.value as DealerStatus)
                 }
-                className="bg-gray-700 border-gray-600 text-gray-100 px-2 py-1 rounded"
+                className="bg-gray-700 border-gray-600 text-gray-100 px-2 py-2 rounded w-full"
               >
                 <option value="active">Đang hoạt động</option>
                 <option value="inactive">Ngưng hoạt động</option>
@@ -171,7 +169,7 @@ export function CreateDealerModal({
                 resetDealerForm();
                 onClose();
               }}
-              className="border-gray-500 text-gray-500 hover:bg-gray-700/60"
+              className="border-gray-500 text-gray-600 hover:bg-gray-700/60"
             >
               Hủy
             </Button>
@@ -179,7 +177,7 @@ export function CreateDealerModal({
             <Button
               type="submit"
               disabled={isCreateLoading}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30"
+              className="bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-emerald-500/30"
             >
               {isCreateLoading ? (
                 <>

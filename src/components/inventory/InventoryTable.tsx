@@ -63,7 +63,7 @@ export function InventoryTable() {
         {/* ✅ Chỉ hiển thị nút thêm nếu được phép chỉnh sửa */}
         {canModify && (
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+            className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
             onClick={() => setIsCreateModalOpen(true)}
           >
             <Plus className="h-4 w-4" /> Thêm Tồn kho
@@ -137,7 +137,7 @@ export function InventoryTable() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-green-400 hover:bg-gray-700 hover:border-green-500"
+                        className="border-gray-600 text-sky-500 hover:bg-gray-700 hover:border-sky-500 bg-gray-600"
                         onClick={() => {
                           setSelectedItem(item);
                           setViewModalOpen(true);
@@ -151,7 +151,7 @@ export function InventoryTable() {
                         <Button
                           variant="outline"
                           size="icon"
-                          className="border-gray-600 text-red-400 hover:bg-gray-700 hover:border-red-500"
+                          className="border-gray-600 text-red-400 hover:bg-gray-700 bg-gray-600 hover:border-red-500"
                           onClick={() => handleDelete(item._id)}
                         >
                           <Trash2 className="h-4 w-4" />

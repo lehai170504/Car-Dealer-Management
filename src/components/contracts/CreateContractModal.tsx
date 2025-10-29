@@ -163,7 +163,7 @@ export const CreateContractModal = ({
           <Button
             onClick={() => handleSubmit(onSuccess, closeModal)}
             disabled={loading}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-sky-600 hover:bg-sky-700"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Tạo

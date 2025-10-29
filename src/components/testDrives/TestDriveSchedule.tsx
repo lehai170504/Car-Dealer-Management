@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Eye, Plus, Search } from "lucide-react";
+import { Loader2, Eye, Plus, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useTestDrives } from "@/hooks/useTestDrives";
 import type { TestDrive, TestDriveStatus } from "@/types/testDrives";
@@ -147,7 +147,7 @@ export function TestDriveSchedule() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-sky-400 hover:bg-gray-700 hover:border-sky-500"
+                        className="border-gray-600 text-sky-400 hover:bg-gray-700 bg-gray-600 hover:border-sky-500"
                         onClick={() => handleViewDetail(drive)}
                       >
                         <Eye className="h-4 w-4" />
@@ -155,10 +155,10 @@ export function TestDriveSchedule() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-red-400 hover:bg-gray-700 hover:border-red-500"
+                        className="border-gray-600 text-red-400 bg-gray-600 hover:bg-gray-700 hover:border-red-500"
                         onClick={() => handleDelete(drive._id)}
                       >
-                        Xóa
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

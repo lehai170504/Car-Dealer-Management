@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -34,15 +33,12 @@ export const ContractDetailModal = ({
   onOpenChange,
   onUpdated,
 }: ContractDetailModalProps) => {
-  const updateHook = useUpdateContract(contract!);
-
   if (!contract) return null;
 
-  const labelClass = "block text-gray-300 font-medium mb-1";
+  const { formData, loading, handleChange, handleUpdate, cancelEdit } =
+    useUpdateContract(contract);
 
-  const handleSave = async () => {
-    await updateHook.handleUpdate(onUpdated, () => onOpenChange(false));
-  };
+  const labelClass = "block text-gray-300 font-medium mb-1";
 
   const statusLabelMap: Record<ContractStatus, string> = {
     draft: "Nháp",
@@ -77,46 +73,8 @@ export const ContractDetailModal = ({
           <div className="space-y-1">
             <label className={labelClass}>Mục tiêu</label>
             <Textarea
-              value={updateHook.formData.targets}
-              onChange={(e) =>
-                updateHook.handleChange("targets", e.target.value)
-              }
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
-
-          {/* Terms */}
-          <div className="space-y-1">
-            <label className={labelClass}>Điều khoản</label>
-            <Textarea
-              value={updateHook.formData.terms}
-              onChange={(e) => updateHook.handleChange("terms", e.target.value)}
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
-
-          {/* Files */}
-          <div className="space-y-1">
-            <label className={labelClass}>Files đính kèm</label>
-            <Textarea
-              value={updateHook.formData.files.join("\n")}
-              onChange={(e) =>
-                updateHook.handleChange("files", e.target.value.split("\n"))
-              }
-              placeholder="Nhập URL file, mỗi dòng 1 file"
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
-
-          {/* Signed Date */}
-          <div className="space-y-1">
-            <label className={labelClass}>Ngày ký</label>
-            <Input
-              type="date"
-              value={updateHook.formData.signedDate || ""}
-              onChange={(e) =>
-                updateHook.handleChange("signedDate", e.target.value)
-              }
+              value={formData.targets}
+              onChange={(e) => handleChange("targets", e.target.value)}
               className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
             />
           </div>
@@ -125,14 +83,14 @@ export const ContractDetailModal = ({
           <div className="space-y-1">
             <label className={labelClass}>Trạng thái</label>
             <Select
-              value={updateHook.formData.status}
+              value={formData.status}
               onValueChange={(val: ContractStatus) =>
-                updateHook.handleChange("status", val)
+                handleChange("status", val)
               }
             >
               <SelectTrigger className="w-full bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm hover:border-gray-500">
                 <SelectValue placeholder="Chọn trạng thái">
-                  {statusLabelMap[updateHook.formData.status]}
+                  {statusLabelMap[formData.status]}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-gray-800 text-gray-100">
@@ -149,7 +107,7 @@ export const ContractDetailModal = ({
           <Button
             variant="outline"
             onClick={() => {
-              updateHook.cancelEdit();
+              cancelEdit();
               onOpenChange(false);
             }}
             className="hover:bg-gray-700 text-neutral-700"
@@ -157,13 +115,11 @@ export const ContractDetailModal = ({
             Hủy
           </Button>
           <Button
-            onClick={handleSave}
-            disabled={updateHook.loading}
+            onClick={() => handleUpdate(onUpdated, () => onOpenChange(false))}
+            disabled={loading}
             className="bg-sky-600 hover:bg-sky-700"
           >
-            {updateHook.loading && (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            )}
+            {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Lưu
           </Button>
         </DialogFooter>

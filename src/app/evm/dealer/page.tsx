@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DealerTable } from "@/components/dealers/DealerList";
-import { EVM_FinanceManagement } from "@/components/debt/DebtTable";
+import { DebtTable } from "@/components/debt/DebtTable";
 import { ContractTable } from "@/components/contracts/ContractTable";
 
 export default function EVM_DealerPage() {
@@ -47,9 +47,9 @@ export default function EVM_DealerPage() {
         {/* Công nợ */}
         <TabsContent value="finance" className="pt-4">
           <h2 className="text-xl font-semibold mb-4 text-gray-200">
-            Quản lý Công nợ và Doanh số theo Đại lý
+            Quản lý Công nợ
           </h2>
-          <EVM_FinanceManagement />
+          <DebtTable />
         </TabsContent>
 
         {/* Hợp đồng */}

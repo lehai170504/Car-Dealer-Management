@@ -1,7 +1,8 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useCreateContract } from "@/hooks/useCreateContract";
+import { ContractStatus } from "@/types/contracts";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateContract } from "@/hooks/useCreateContract";
-import { ContractStatus } from "@/types/contracts";
 
 interface CreateContractModalProps {
   open: boolean;
@@ -34,6 +33,8 @@ export const CreateContractModal = ({
   onSuccess,
 }: CreateContractModalProps) => {
   const {
+    dealers,
+    dealersLoading,
     dealer,
     setDealer,
     startDate,
@@ -77,13 +78,27 @@ export const CreateContractModal = ({
         <div className="space-y-4 mt-4">
           {/* Dealer */}
           <div className="space-y-1">
-            <label className={labelClass}>ID đại lý</label>
-            <Input
-              placeholder="ID đại lý"
-              value={dealer}
-              onChange={(e) => setDealer(e.target.value)}
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
+            <label className={labelClass}>Chọn đại lý</label>
+            <Select
+              value={dealer?._id || ""}
+              onValueChange={(val) => {
+                const selected = dealers.find((d) => d._id === val) || null;
+                setDealer(selected);
+              }}
+            >
+              <SelectTrigger className="w-full bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm hover:border-gray-500">
+                <SelectValue placeholder="Chọn đại lý">
+                  {dealer?.name}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 text-gray-100">
+                {dealers.map((d) => (
+                  <SelectItem key={d._id} value={d._id}>
+                    {d.name} ({d._id})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Start Date */}
@@ -162,7 +177,7 @@ export const CreateContractModal = ({
           </Button>
           <Button
             onClick={() => handleSubmit(onSuccess, closeModal)}
-            disabled={loading}
+            disabled={loading || dealersLoading}
             className="bg-sky-600 hover:bg-sky-700"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

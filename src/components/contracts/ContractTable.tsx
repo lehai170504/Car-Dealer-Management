@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Eye, Search, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Pagination } from "@/components/ui/pagination";
 import { useContracts } from "@/hooks/useContracts";
 import { ContractDetailModal } from "./ContractDetailModal";
 import { CreateContractModal } from "./CreateContractModal";
@@ -45,13 +44,9 @@ export function ContractTable() {
     filteredContracts,
     loading,
     error,
-    page,
-    setPage,
-    limit,
-    total,
     search,
     setSearch,
-    fetchContracts,
+    fetchContractById,
     handleDelete,
   } = useContracts();
 
@@ -59,10 +54,10 @@ export function ContractTable() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<any>(null);
 
-  // 🔁 Gọi lại API khi chuyển trang
-  useEffect(() => {
-    fetchContracts(page);
-  }, [page, fetchContracts]);
+  const openDetailModal = async (id: string) => {
+    await fetchContractById(id);
+    setDetailModalOpen(true);
+  };
 
   return (
     <div className="space-y-6 p-4">
@@ -120,7 +115,7 @@ export function ContractTable() {
                     className="border-gray-700 hover:bg-gray-700/50 transition-colors"
                   >
                     <TableCell className="text-center font-medium">
-                      {(page - 1) * limit + index + 1}
+                      {index + 1}
                     </TableCell>
                     <TableCell>{c.contractNo}</TableCell>
                     <TableCell className="text-gray-300">{c.order}</TableCell>
@@ -143,7 +138,7 @@ export function ContractTable() {
                         className="border-gray-600 text-sky-400 hover:bg-gray-700 bg-gray-600 hover:border-sky-500"
                         onClick={() => {
                           setSelectedContract(c);
-                          setDetailModalOpen(true);
+                          openDetailModal(c._id);
                         }}
                       >
                         <Eye className="h-4 w-4" />
@@ -174,23 +169,11 @@ export function ContractTable() {
         )}
       </div>
 
-      {/* Pagination */}
-      {total > limit && (
-        <div className="flex justify-center mt-4">
-          <Pagination
-            currentPage={page}
-            totalCount={total}
-            pageSize={limit}
-            onPageChange={setPage}
-          />
-        </div>
-      )}
-
       {/* Modals */}
       <CreateContractModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
-        onSuccess={fetchContracts}
+        onSuccess={() => fetchContractById(selectedContract?._id || "")}
       />
 
       {selectedContract && (
@@ -198,7 +181,7 @@ export function ContractTable() {
           contract={selectedContract}
           open={detailModalOpen}
           onOpenChange={setDetailModalOpen}
-          onUpdated={fetchContracts}
+          onUpdated={() => fetchContractById(selectedContract._id)}
         />
       )}
     </div>

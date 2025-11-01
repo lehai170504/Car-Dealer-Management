@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { UserProfile } from "@/types/auth";
 import {
   getProfile,
-  logout,
+  logout as logoutAPI,
   refreshToken as refreshTokenAPI,
 } from "@/services/auth/authService";
 
@@ -25,23 +25,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize auth state from localStorage
   useEffect(() => {
     const initAuth = async () => {
       try {
         const storedToken = localStorage.getItem("accessToken");
         const storedRefreshToken = localStorage.getItem("refreshToken");
+        const storedUser = localStorage.getItem("user");
 
-        if (storedToken && storedRefreshToken) {
+        if (storedToken && storedRefreshToken && storedUser) {
           setToken(storedToken);
           setRefreshToken(storedRefreshToken);
+          setUser(JSON.parse(storedUser));
 
           try {
-            const profile = await getProfile();
-            setUser(profile);
-          } catch (error: any) {
-            // Nếu token hết hạn → thử refresh
-            console.warn("Access token expired, trying to refresh...");
-
+            // Verify token by calling getProfile
+            await getProfile();
+          } catch {
+            // Token expired → try refresh
             const refreshed = await refreshTokenAPI();
             setToken(refreshed.token);
             setRefreshToken(refreshed.refreshToken);
@@ -53,19 +54,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
       } catch (error) {
-        console.error("AuthContext initAuth error:", error);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-        setUser(null);
-        setToken(null);
-        setRefreshToken(null);
+        console.error("Auth init error:", error);
+        await logoutUser();
       } finally {
         setIsLoading(false);
       }
     };
 
     initAuth();
+  }, []);
+
+  // Sync logout across tabs
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "accessToken" && !e.newValue) {
+        setUser(null);
+        setToken(null);
+        setRefreshToken(null);
+        window.location.href = "/auth/login";
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   const loginUser = (
@@ -76,6 +86,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(user);
     setToken(token);
     setRefreshToken(refreshToken);
+
     localStorage.setItem("user", JSON.stringify(user));
     localStorage.setItem("accessToken", token);
     localStorage.setItem("refreshToken", refreshToken);
@@ -83,7 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logoutUser = async () => {
     try {
-      await logout();
+      await logoutAPI();
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {

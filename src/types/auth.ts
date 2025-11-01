@@ -1,3 +1,5 @@
+import { Dealer } from "./dealer";
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -24,8 +26,12 @@ export interface LoginResponse {
 }
 
 export interface RegisterCredentials {
-  name: string;
   email: string;
   password: string;
-  role: "Admin" | "Dealer Manager" | "Dealer Staff" | string;
+  role: "Admin" | "DealerManager" | "DealerStaff";
+  dealer?: Dealer; // optional vì Admin có thể không thuộc dealer
+  profile: {
+    name: string;
+    phone: string;
+  };
 }

@@ -5,14 +5,12 @@ import {
   BarChart,
   Users,
   ShoppingCart,
-  Settings,
   Zap,
   LogOut,
   Package,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { logout } from "@/services/auth/authService";
 import { Button } from "../ui/button";
+import { useLogout } from "@/hooks/useLogout";
 
 const cn = (...classes: (string | boolean | undefined)[]): string =>
   classes.filter(Boolean).join(" ");
@@ -25,7 +23,7 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-// Giả lập path hiện tại
+// Giả lập path hiện tại (có thể thay bằng usePathname sau)
 const SIMULATED_PATH = "/evm/dashboard";
 
 // ====================== MENU CHO TỪNG ROLE ======================
@@ -118,6 +116,8 @@ const adminMenu: NavItem[] = [
 
 // ====================== COMPONENT SIDEBAR ======================
 export function Sidebar({ role }: { role: Role }) {
+  const { logoutUser, isLoading } = useLogout();
+
   let menuItems: NavItem[] = [];
 
   switch (role) {
@@ -133,16 +133,7 @@ export function Sidebar({ role }: { role: Role }) {
     case "Admin":
       menuItems = adminMenu;
       break;
-    default:
-      menuItems = [];
   }
-
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-    router.push("/auth/login");
-  };
 
   return (
     <div className="flex h-full w-64 flex-col space-y-6 bg-gray-900 text-gray-200 border-r border-gray-800 shadow-2xl p-4">
@@ -194,11 +185,16 @@ export function Sidebar({ role }: { role: Role }) {
       {/* FOOTER / LOGOUT */}
       <div className="mt-auto pt-4 border-t border-gray-700/50">
         <Button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center space-x-2 p-3 text-sm font-medium rounded-lg text-red-400 hover:bg-red-900/50 transition-colors"
+          onClick={logoutUser}
+          disabled={isLoading}
+          className={cn(
+            "w-full flex items-center justify-center space-x-2 p-3 text-sm font-medium rounded-lg transition-colors",
+            "text-red-400 hover:bg-red-900/50",
+            isLoading && "opacity-70 cursor-not-allowed"
+          )}
         >
           <LogOut className="h-4 w-4" />
-          <span>Đăng xuất</span>
+          <span>{isLoading ? "Đang đăng xuất..." : "Đăng xuất"}</span>
         </Button>
       </div>
     </div>

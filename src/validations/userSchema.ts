@@ -26,22 +26,33 @@ const statusValidation = Yup.string()
   .oneOf(["active", "inactive"], "Trạng thái không hợp lệ")
   .required("Trạng thái bắt buộc chọn");
 
-// Schema tạo mới user
+/** 📘 Schema xác thực cho form đăng ký */
 export const createUserSchema = Yup.object().shape({
-  profile: Yup.object({
-    name: nameValidation,
-  }),
-  email: emailValidation,
-  role: roleValidation,
-  dealer: Yup.object({
-    _id: Yup.string().required("Vui lòng chọn đại lý"),
-    name: Yup.string(),
-  }).when("role", {
-    is: (role: UserRole) => role === "DealerManager" || role === "DealerStaff",
-    then: (schema) => schema.required("Đại lý bắt buộc với vai trò này"),
+  email: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
+
+  password: Yup.string()
+    .min(6, "Mật khẩu phải có ít nhất 6 ký tự")
+    .required("Mật khẩu là bắt buộc"),
+
+  role: Yup.string()
+    .oneOf(
+      ["Admin", "EVMStaff", "DealerManager", "DealerStaff"],
+      "Vai trò không hợp lệ"
+    )
+    .required("Vai trò là bắt buộc"),
+
+  dealer: Yup.string().when("role", {
+    is: (role: string) => ["DealerManager", "DealerStaff"].includes(role),
+    then: (schema) => schema.required("Vui lòng chọn đại lý"),
     otherwise: (schema) => schema.notRequired(),
   }),
-  status: statusValidation,
+
+  profile: Yup.object().shape({
+    name: Yup.string().trim().required("Tên là bắt buộc"),
+    phone: Yup.string()
+      .matches(/^0\d{9,10}$/, "Số điện thoại không hợp lệ")
+      .required("Số điện thoại là bắt buộc"),
+  }),
 });
 
 // Schema cập nhật user (update)

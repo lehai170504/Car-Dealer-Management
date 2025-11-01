@@ -17,3 +17,14 @@ export interface User {
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
 }
+
+export interface CreateUserRequest {
+  email: string;
+  password: string;
+  role: "Admin" | "DealerManager" | "DealerStaff";
+  dealer?: Dealer; // optional vì Admin có thể không thuộc dealer
+  profile: {
+    name: string;
+    phone: string;
+  };
+}

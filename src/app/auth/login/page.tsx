@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLogin } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import { LoginCredentials } from "@/types/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,13 +38,39 @@ const TechOverlay = () => (
 );
 
 export default function LoginPage() {
-  // ✅ Gọi hook login đã tích hợp với AuthContext
   const { isLoading, error, loginUser } = useLogin();
+  const { isAuthenticated, user } = useAuth(); // từ AuthContext
+  const router = useRouter();
+  const toastShown = useRef(false); // tránh toast lặp lại
 
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: "",
     password: "",
   });
+
+  // ✅ Chặn truy cập trang login nếu đã đăng nhập
+  useEffect(() => {
+    if (isAuthenticated && !toastShown.current) {
+      // Redirect theo role
+      const role = user?.role?.trim();
+      switch (role) {
+        case "Admin":
+          router.replace("/admin/users");
+          break;
+        case "DealerManager":
+        case "DealerStaff":
+          router.replace("/dealer/dashboard");
+          break;
+        case "EVMStaff":
+          router.replace("/evm/catalog");
+          break;
+        default:
+          router.replace("/dashboard");
+      }
+    }
+  }, [isAuthenticated, user, router]);
+
+  if (isAuthenticated) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCredentials({

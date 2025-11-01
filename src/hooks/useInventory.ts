@@ -1,7 +1,9 @@
+"use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Inventory } from "@/types/inventory";
 import { inventoryService } from "@/services/inventory/inventoryService";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 
 interface UseInventoryResult {
   inventoryItems: Inventory[];
@@ -35,6 +37,7 @@ export const useInventory = (): UseInventoryResult => {
     } catch (err: any) {
       console.error("❌ Lỗi khi tải danh sách tồn kho:", err);
       setError(err?.message || "Không thể tải danh sách tồn kho từ API.");
+      toast.error(err?.message || "Không thể tải danh sách tồn kho từ API.");
     } finally {
       setLoading(false);
     }
@@ -43,33 +46,19 @@ export const useInventory = (): UseInventoryResult => {
   // === Xóa bản ghi tồn kho ===
   const handleDelete = useCallback(
     async (id: string) => {
-      const confirm = await Swal.fire({
-        title: "Xóa bản ghi tồn kho?",
-        text: "Hành động này không thể hoàn tác!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Xóa",
-        cancelButtonText: "Hủy",
-        confirmButtonColor: "#dc2626",
-      });
-      if (!confirm.isConfirmed) return;
+      const confirmed = window.confirm(
+        "Xóa bản ghi tồn kho? Hành động này không thể hoàn tác!"
+      );
+      if (!confirmed) return;
 
       try {
         setLoading(true);
         await inventoryService.deleteInventoryItem(id);
-        Swal.fire(
-          "Đã xóa!",
-          "Bản ghi tồn kho đã bị xóa thành công.",
-          "success"
-        );
+        toast.success("Bản ghi tồn kho đã bị xóa thành công.");
         await fetchInventory();
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa bản ghi tồn kho:", err);
-        Swal.fire(
-          "Lỗi",
-          err?.message || "Không thể xóa bản ghi tồn kho",
-          "error"
-        );
+        toast.error(err?.message || "Không thể xóa bản ghi tồn kho.");
       } finally {
         setLoading(false);
       }

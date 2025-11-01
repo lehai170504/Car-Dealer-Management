@@ -15,9 +15,9 @@ export const promotionService = {
       const res = await axiosInstance.get<PromotionListResponse>(endpoint);
       return res.data;
     } catch (error: any) {
-      console.error("❌ Error fetching promotions list:", error);
+      console.error("❌ Lỗi khi lấy danh sách khuyến mãi:", error);
       throw new Error(
-        error.response?.data?.message || "Failed to fetch promotions list"
+        error.response?.data?.message || "Không thể lấy danh sách khuyến mãi"
       );
     }
   },
@@ -30,9 +30,9 @@ export const promotionService = {
       const res = await axiosInstance.post<Promotion>(endpoint, payload);
       return res.data;
     } catch (error: any) {
-      console.error("❌ Error creating promotion:", error);
+      console.error("❌ Lỗi khi tạo khuyến mãi mới:", error);
       throw new Error(
-        error.response?.data?.message || "Failed to create promotion"
+        error.response?.data?.message || "Không thể tạo khuyến mãi mới"
       );
     }
   },
@@ -49,9 +49,9 @@ export const promotionService = {
       );
       return res.data;
     } catch (error: any) {
-      console.error(`❌ Error updating promotion ID ${id}:`, error);
+      console.error(`❌ Lỗi khi cập nhật khuyến mãi ID ${id}:`, error);
       throw new Error(
-        error.response?.data?.message || "Failed to update promotion"
+        error.response?.data?.message || "Không thể cập nhật khuyến mãi"
       );
     }
   },
@@ -64,9 +64,9 @@ export const promotionService = {
       );
       return res.data || { success: true };
     } catch (error: any) {
-      console.error(`❌ Error deleting promotion ID ${id}:`, error);
+      console.error(`❌ Lỗi khi xóa khuyến mãi ID ${id}:`, error);
       throw new Error(
-        error.response?.data?.message || "Failed to delete promotion"
+        error.response?.data?.message || "Không thể xóa khuyến mãi"
       );
     }
   },

@@ -2,6 +2,8 @@ import axiosInstance from "@/utils/axiosInstance";
 import {
   Inventory,
   InventoryCreateRequest,
+  InventoryTransferRequest,
+  InventoryTransferResponse,
   InventoryUpdateRequest,
   SimpleInventoryListResponse,
 } from "@/types/inventory";
@@ -65,6 +67,26 @@ export const inventoryService = {
       console.error(`❌ Error deleting inventory item ID ${id}:`, error);
       throw new Error(
         error.response?.data?.message || "Failed to delete inventory item"
+      );
+    }
+  },
+
+  transferInventory: async (
+    payload: InventoryTransferRequest
+  ): Promise<InventoryTransferResponse> => {
+    try {
+      const res = await axiosInstance.post<InventoryTransferResponse>(
+        `${endpoint}/transfer`,
+        payload
+      );
+      return res.data;
+    } catch (error: any) {
+      console.error(
+        `❌ Error transferring inventory from ${payload.fromDealerId} to ${payload.toDealerId}:`,
+        error
+      );
+      throw new Error(
+        error.response?.data?.message || "Failed to transfer inventory"
       );
     }
   },

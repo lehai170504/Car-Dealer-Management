@@ -15,7 +15,7 @@ import { Loader2, Plus, Search, Eye, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuotes } from "@/hooks/useQuotes";
 import { CreateQuoteModal } from "./CreateQuoteModal";
-import { QuoteDetailModal } from "./QuoteDetailModal";
+import QuoteDetailModal from "./QuoteDetailModal";
 import { Quote } from "@/types/quotes";
 import { Pagination } from "@/components/ui/pagination";
 
@@ -59,11 +59,20 @@ export function QuoteTable() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+  const [loadingQuoteDetail, setLoadingQuoteDetail] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
 
-  // 🔁 Load lại khi chuyển trang
+  // 🔁 Load dữ liệu khi đổi trang
   useEffect(() => {
     fetchQuotes(page);
   }, [page, fetchQuotes]);
+
+  // 🛠 Xử lý khi nhấn "Chỉnh sửa" trong modal chi tiết
+  const handleEditQuote = (quote: Quote) => {
+    setEditingQuote(quote);
+    setEditModalOpen(true);
+  };
 
   return (
     <div className="space-y-6 p-4">
@@ -72,7 +81,7 @@ export function QuoteTable() {
         <div className="relative w-full sm:w-1/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Tìm kiếm theo khách hàng, mã quote..."
+            placeholder="Tìm kiếm theo khách hàng, số điện thoại..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10 bg-gray-700 border-gray-600 text-gray-50 placeholder:text-gray-400 focus:border-sky-500 focus:ring-sky-500"
@@ -103,7 +112,8 @@ export function QuoteTable() {
                   STT
                 </TableHead>
                 <TableHead className="font-medium">Khách hàng</TableHead>
-                <TableHead className="font-medium">Mã quote</TableHead>
+                <TableHead className="font-medium">Số điện thoại</TableHead>
+                <TableHead className="font-medium">Đại lý</TableHead>
                 <TableHead className="font-medium">Số lượng xe</TableHead>
                 <TableHead className="font-medium">Giá trị</TableHead>
                 <TableHead className="font-medium">Ngày tạo</TableHead>
@@ -124,20 +134,42 @@ export function QuoteTable() {
                     <TableCell className="text-center font-medium">
                       {(page - 1) * limit + index + 1}
                     </TableCell>
-                    <TableCell>{quote.customer}</TableCell>
-                    <TableCell className="text-gray-300">{quote._id}</TableCell>
-                    <TableCell className="text-sky-400 font-semibold">
-                      {quote.items.reduce((sum, i) => sum + i.qty, 0)}
+
+                    <TableCell>
+                      {quote.customerInfo?.fullName || "Không rõ"}
                     </TableCell>
+                    <TableCell>{quote.customerInfo?.phone || "—"}</TableCell>
+
+                    <TableCell>
+                      {quote.dealerInfo ? (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sky-400">
+                            {quote.dealerInfo.name}
+                          </span>
+                          <span className="text-gray-400 text-sm">
+                            {quote.dealerInfo.region}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500">—</span>
+                      )}
+                    </TableCell>
+
+                    <TableCell className="text-sky-400 font-semibold">
+                      {quote.items?.reduce((sum, i) => sum + i.qty, 0) ?? 0}
+                    </TableCell>
+
                     <TableCell className="text-emerald-400 font-medium">
                       {new Intl.NumberFormat("vi-VN", {
                         style: "currency",
                         currency: "VND",
                       }).format(quote.total)}
                     </TableCell>
+
                     <TableCell>
                       {new Date(quote.createdAt).toLocaleDateString("vi-VN")}
                     </TableCell>
+
                     <TableCell>
                       <Badge
                         className={`px-2 py-1 rounded ${statusColor(
@@ -147,6 +179,7 @@ export function QuoteTable() {
                         {statusMap[quote.status] || quote.status}
                       </Badge>
                     </TableCell>
+
                     <TableCell className="text-right flex justify-end gap-2">
                       <Button
                         variant="outline"
@@ -173,7 +206,7 @@ export function QuoteTable() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={9}
                     className="text-center text-gray-400 py-6"
                   >
                     Không có quote nào
@@ -197,19 +230,24 @@ export function QuoteTable() {
         </div>
       )}
 
-      {/* Modals */}
+      {/* Create Quote Modal */}
       <CreateQuoteModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
         onSuccess={() => fetchQuotes(page)}
       />
 
+      {/* Quote Detail Modal */}
       {selectedQuote && (
         <QuoteDetailModal
           quote={selectedQuote}
           open={detailModalOpen}
-          onOpenChange={setDetailModalOpen}
-          onUpdated={() => fetchQuotes(page)}
+          onClose={() => setDetailModalOpen(false)}
+          onEdit={(quote) => {
+            handleEditQuote(quote);
+            setDetailModalOpen(false);
+          }}
+          loading={loadingQuoteDetail}
         />
       )}
     </div>

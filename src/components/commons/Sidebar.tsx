@@ -88,13 +88,18 @@ const evmStaffMenu: NavItem[] = [
   },
   {
     title: "Sản phẩm & Phân phối",
-    href: "/admin/products",
+    href: "/evm/catalog",
     icon: <Car className="h-4 w-4" />,
   },
   {
     title: "Báo cáo Tài chính",
-    href: "/evm/finance",
+    href: "/evm/reports",
     icon: <BarChart className="h-4 w-4" />,
+  },
+  {
+    title: "Quản lý đại lý",
+    href: "/evm/dealer",
+    icon: <Users className="h-4 w-4" />,
   },
 ];
 

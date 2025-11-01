@@ -1,137 +1,176 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import Swal from "sweetalert2";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { toast } from "sonner";
 import { vehicleModelService } from "@/services/vehicleModels/vehicleModelService";
-import { VehicleModel, VehicleModelListResponse } from "@/types/vehicleModels";
+import {
+  VehicleModel,
+  CreateVehicleModelRequest,
+  UpdateVehicleModelRequest,
+} from "@/types/vehicleModels";
 
+/** 🧩 Kết quả trả về của hook */
 interface UseVehicleModelsResult {
   vehicleModels: VehicleModel[];
   filteredVehicleModels: VehicleModel[];
   selectedModel: VehicleModel | null;
   loading: boolean;
   error: string | null;
+
   search: string;
   setSearch: (s: string) => void;
 
-  page: number;
-  setPage: (p: number) => void;
-  limit: number;
-  total: number;
-
-  fetchVehicleModels: (page?: number) => Promise<void>;
+  fetchVehicleModels: () => Promise<void>;
   fetchVehicleModelById: (id: string) => Promise<void>;
+  handleCreate: (payload: CreateVehicleModelRequest) => Promise<void>;
+  handleUpdate: (
+    id: string,
+    payload: UpdateVehicleModelRequest
+  ) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
+
+  /** 🟣 Cập nhật trạng thái mẫu xe (Active / Inactive) */
+  handleToggleStatus: (id: string, active: boolean) => Promise<void>;
 }
 
-/** 🧩 Hook quản lý danh sách và chi tiết Vehicle Models */
+/** 🧠 Hook quản lý CRUD cho Mẫu Xe */
 export const useVehicleModels = (): UseVehicleModelsResult => {
   const [vehicleModels, setVehicleModels] = useState<VehicleModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<VehicleModel | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const isFetching = useRef(false);
 
-  // Pagination
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
+  /** 🔵 Lấy toàn bộ danh sách mẫu xe */
+  const fetchVehicleModels = useCallback(async () => {
+    if (isFetching.current) return;
+    isFetching.current = true;
+    setLoading(true);
 
-  /** 🔵 Lấy danh sách Vehicle Models (phân trang) */
-  const fetchVehicleModels = useCallback(
-    async (pageNumber: number = page) => {
-      try {
-        setLoading(true);
-
-        const res: VehicleModelListResponse =
-          await vehicleModelService.getAllVehicleModels({
-            page: pageNumber,
-            limit,
-          });
-
-        setVehicleModels(res.items ?? []);
-        setTotal(res.total ?? 0);
-
-        if (typeof res.page === "number") setPage(res.page);
-        if (typeof res.limit === "number") setLimit(res.limit);
-
-        setError(null);
-      } catch (err: any) {
-        console.error("❌ Lỗi khi tải danh sách vehicle models:", err);
-        setError(err?.message || "Không thể tải danh sách vehicle models.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [page, limit]
-  );
-
-  /** 🟢 Lấy chi tiết Vehicle Model theo ID */
-  const fetchVehicleModelById = useCallback(async (id: string) => {
     try {
-      setLoading(true);
-      const data = await vehicleModelService.getVehicleModelById(id);
-      setSelectedModel(data);
+      const data = await vehicleModelService.getAllVehicleModels();
+      setVehicleModels(data);
       setError(null);
     } catch (err: any) {
-      console.error(`❌ Lỗi khi lấy vehicle model ID ${id}:`, err);
-      setError(err?.message || "Không thể tải thông tin vehicle model.");
+      console.error("❌ Lỗi khi tải danh sách mẫu xe:", err);
+      setError(err?.message || "Không thể tải danh sách mẫu xe.");
+      toast.error("Không thể tải danh sách mẫu xe.");
+    } finally {
+      setLoading(false);
+      isFetching.current = false;
+    }
+  }, []);
+
+  /** 🟩 Lấy chi tiết mẫu xe */
+  const fetchVehicleModelById = useCallback(async (id: string) => {
+    setLoading(true);
+    try {
+      const data = await vehicleModelService.getDetailVehicleModel(id);
+      setSelectedModel(data);
+    } catch (err: any) {
+      console.error(`❌ Lỗi khi lấy chi tiết mẫu xe ID ${id}:`, err);
+      setError(err?.message || "Không thể tải thông tin mẫu xe.");
+      toast.error("Không thể tải thông tin mẫu xe.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  /** 🔴 Xóa Vehicle Model */
-  const handleDelete = useCallback(
-    async (id: string) => {
-      const confirm = await Swal.fire({
-        title: "Xóa Vehicle Model?",
-        text: "Hành động này không thể hoàn tác!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Xóa",
-        cancelButtonText: "Hủy",
-        confirmButtonColor: "#dc2626",
-      });
-
-      if (!confirm.isConfirmed) return;
-
+  /** 🟢 Tạo mới mẫu xe */
+  const handleCreate = useCallback(
+    async (payload: CreateVehicleModelRequest) => {
+      setLoading(true);
+      const toastId = toast.loading("Đang tạo mẫu xe...");
       try {
-        setLoading(true);
-        await vehicleModelService.deleteVehicleModel(id);
-        Swal.fire("Đã xóa!", "Vehicle Model đã bị xóa thành công.", "success");
-        await fetchVehicleModels(page);
+        await vehicleModelService.createVehicleModel(payload);
+        toast.success("Đã tạo mẫu xe mới!", { id: toastId });
+        await fetchVehicleModels();
       } catch (err: any) {
-        console.error("❌ Lỗi khi xóa vehicle model:", err);
-        Swal.fire(
-          "Lỗi",
-          err?.message || "Không thể xóa vehicle model",
-          "error"
-        );
+        console.error("❌ Lỗi khi tạo mẫu xe:", err);
+        toast.error(err?.message || "Không thể tạo mẫu xe mới.", {
+          id: toastId,
+        });
       } finally {
         setLoading(false);
       }
     },
-    [fetchVehicleModels, page]
+    [fetchVehicleModels]
   );
 
-  /** 🧮 Lọc danh sách client-side */
+  /** 🟡 Cập nhật mẫu xe */
+  const handleUpdate = useCallback(
+    async (id: string, payload: UpdateVehicleModelRequest) => {
+      setLoading(true);
+      const toastId = toast.loading("Đang cập nhật mẫu xe...");
+      try {
+        await vehicleModelService.updateVehicleModel(id, payload);
+        toast.success("Đã cập nhật mẫu xe!", { id: toastId });
+        await fetchVehicleModels();
+      } catch (err: any) {
+        console.error("❌ Lỗi khi cập nhật mẫu xe:", err);
+        toast.error(err?.message || "Không thể cập nhật mẫu xe.", {
+          id: toastId,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchVehicleModels]
+  );
+
+  /** 🟣 Cập nhật trạng thái mẫu xe (Active / Inactive) */
+  const handleToggleStatus = useCallback(
+    async (id: string, active: boolean) => {
+      const toastId = toast.loading("Đang cập nhật trạng thái mẫu xe...");
+      try {
+        await handleUpdate(id, { active });
+        toast.success(
+          `Mẫu xe đã được ${active ? "kích hoạt" : "ngưng hoạt động"}.`,
+          { id: toastId }
+        );
+      } catch (err: any) {
+        console.error("❌ Lỗi khi cập nhật trạng thái mẫu xe:", err);
+        toast.error("Không thể cập nhật trạng thái mẫu xe.", { id: toastId });
+      }
+    },
+    [handleUpdate]
+  );
+
+  /** 🔴 Xóa mẫu xe */
+  const handleDelete = useCallback(
+    async (id: string) => {
+      toast.warning("Đang xóa mẫu xe...");
+      setLoading(true);
+      try {
+        await vehicleModelService.deleteVehicleModel(id);
+        toast.success("Mẫu xe đã bị xóa.");
+        await fetchVehicleModels();
+      } catch (err: any) {
+        console.error("❌ Lỗi khi xóa mẫu xe:", err);
+        toast.error(err?.message || "Không thể xóa mẫu xe.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchVehicleModels]
+  );
+
+  /** 🔍 Lọc danh sách client-side */
   const filteredVehicleModels = useMemo(() => {
-    if (!search) return vehicleModels;
-    const lower = search.toLowerCase();
-    return vehicleModels.filter(
-      (m) =>
-        m.name.toLowerCase().includes(lower) ||
-        m.brand.toLowerCase().includes(lower) ||
-        m.segment.toLowerCase().includes(lower) ||
-        m.description?.toLowerCase().includes(lower)
+    const q = search.trim().toLowerCase();
+    if (!q) return vehicleModels;
+    return vehicleModels.filter((m) =>
+      [m.name, m.brand, m.segment, m.description]
+        .filter(Boolean)
+        .some((f) => f!.toLowerCase().includes(q))
     );
   }, [vehicleModels, search]);
 
-  /** 🪄 Gọi lần đầu */
+  /** 🪄 Gọi danh sách khi mount */
   useEffect(() => {
-    fetchVehicleModels(page);
-  }, [fetchVehicleModels, page]);
+    fetchVehicleModels();
+  }, [fetchVehicleModels]);
 
   return {
     vehicleModels,
@@ -141,12 +180,11 @@ export const useVehicleModels = (): UseVehicleModelsResult => {
     error,
     search,
     setSearch,
-    page,
-    setPage,
-    limit,
-    total,
     fetchVehicleModels,
     fetchVehicleModelById,
+    handleCreate,
+    handleUpdate,
     handleDelete,
+    handleToggleStatus,
   };
 };

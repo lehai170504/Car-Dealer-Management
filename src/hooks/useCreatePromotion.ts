@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 import { promotionService } from "@/services/promotions/promotionService";
 import type {
   CreatePromotionRequest,
@@ -7,9 +7,9 @@ import type {
   PromotionType,
   PromotionStatus,
 } from "@/types/promotions";
+import { createPromotionSchema } from "@/validations/promotionSchema";
 
 export const useCreatePromotion = () => {
-  // === State cho các trường của CreatePromotionRequest ===
   const [name, setName] = useState("");
   const [scope, setScope] = useState<PromotionScope>("global");
   const [dealers, setDealers] = useState<string[]>([]);
@@ -36,16 +36,13 @@ export const useCreatePromotion = () => {
   };
 
   const handleSubmit = async (onSuccess: () => void, onClose: () => void) => {
-    if (!name || !validFrom || !validTo || value < 0) {
-      Swal.fire(
-        "Thiếu thông tin",
-        "Vui lòng nhập đủ Name, Valid From, Valid To và Value >= 0!",
-        "warning"
-      );
-      return;
-    }
-
     try {
+      // Validate form
+      await createPromotionSchema.validate(
+        { name, validFrom, validTo, value },
+        { abortEarly: false }
+      );
+
       setLoading(true);
 
       const payload: CreatePromotionRequest = {
@@ -63,22 +60,19 @@ export const useCreatePromotion = () => {
 
       await promotionService.createPromotion(payload);
 
-      Swal.fire(
-        "Thành công!",
-        "Đã tạo chương trình khuyến mãi mới.",
-        "success"
-      );
-
+      toast.success("Đã tạo chương trình khuyến mãi mới thành công.");
       resetForm();
       onClose();
       onSuccess();
-    } catch (error: any) {
-      console.error(error);
-      Swal.fire(
-        "Lỗi",
-        error?.message || "Không thể tạo chương trình khuyến mãi.",
-        "error"
-      );
+    } catch (err: any) {
+      if (err.name === "ValidationError") {
+        err.errors.forEach((e: string, i: number) => {
+          setTimeout(() => toast.error(e), i * 200);
+        });
+      } else {
+        console.error(err);
+        toast.error(err?.message || "Không thể tạo chương trình khuyến mãi.");
+      }
     } finally {
       setLoading(false);
     }

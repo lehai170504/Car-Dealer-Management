@@ -17,7 +17,7 @@ import { FormattedNumberInput } from "../commons/FormattedNumberInput";
 interface CreateDealerModalProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void; // callback reload list
+  onSuccess: () => void;
 }
 
 export function CreateDealerModal({
@@ -134,7 +134,6 @@ export function CreateDealerModal({
 
           {/* Credit Limit & Status */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Credit Limit */}
             <FormattedNumberInput
               label="Credit Limit (VNĐ)"
               value={dealerForm.creditLimit}
@@ -144,7 +143,6 @@ export function CreateDealerModal({
               labelClassName="text-gray-300 font-medium"
             />
 
-            {/* Status */}
             <div>
               <Label className="text-gray-300">Trạng thái</Label>
               <select

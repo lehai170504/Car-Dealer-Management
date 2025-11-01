@@ -11,22 +11,11 @@ import {
 const endpoint = "/vehicle-colors";
 
 export const vehicleColorService = {
-  /** 🟦 Lấy danh sách Vehicle Colors (hỗ trợ phân trang) */
-  getAllVehicleColors: async (params?: {
-    page?: number;
-    limit?: number;
-  }): Promise<VehicleColorListResponse> => {
+  /** 🟦 Lấy danh sách Vehicle Colors*/
+  getAllVehicleColors: async (): Promise<VehicleColorListResponse> => {
     try {
-      const res = await axiosInstance.get<VehicleColorListResponse>(endpoint, {
-        params,
-      });
-      const data = res.data || {};
-      return {
-        items: data.items || [],
-        total: data.total ?? 0,
-        page: data.page ?? params?.page ?? 1,
-        limit: data.limit ?? params?.limit ?? 10,
-      };
+      const res = await axiosInstance.get<VehicleColorListResponse>(endpoint);
+      return res.data || [];
     } catch (error: any) {
       console.error("❌ Error fetching vehicle colors:", error);
       throw new Error(

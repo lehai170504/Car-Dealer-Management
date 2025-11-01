@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 import { promotionService } from "@/services/promotions/promotionService";
 import type { Promotion, UpdatePromotionRequest } from "@/types/promotions";
+import { updatePromotionSchema } from "@/validations/promotionSchema";
 
 export const useUpdatePromotion = (initialPromotion: Promotion) => {
   const [editMode, setEditMode] = useState(false);
@@ -39,20 +40,20 @@ export const useUpdatePromotion = (initialPromotion: Promotion) => {
   };
 
   const handleUpdate = async (onUpdated: () => void, onClose: () => void) => {
-    // Fallback khi formData.validFrom hoặc validTo undefined
-    if (!formData.name || !formData.validFrom || !formData.validTo) {
-      Swal.fire(
-        "Thiếu thông tin",
-        "Vui lòng nhập đủ Name, Valid From và Valid To!",
-        "warning"
-      );
-      return;
-    }
-
     try {
+      // Validate form
+      await updatePromotionSchema.validate(
+        {
+          name: formData.name,
+          validFrom: formData.validFrom,
+          validTo: formData.validTo,
+          value: formData.value,
+        },
+        { abortEarly: false }
+      );
+
       setLoading(true);
 
-      // Nếu dealers undefined thì gửi mảng rỗng
       const updatePayload: UpdatePromotionRequest = {
         ...formData,
         dealers: formData.dealers ?? [],
@@ -64,22 +65,21 @@ export const useUpdatePromotion = (initialPromotion: Promotion) => {
         updatePayload
       );
 
-      Swal.fire(
-        "Thành công",
-        "Cập nhật chương trình khuyến mãi thành công",
-        "success"
-      );
-
+      toast.success("Cập nhật chương trình khuyến mãi thành công.");
       setEditMode(false);
       onUpdated();
       onClose();
     } catch (err: any) {
-      console.error(err);
-      Swal.fire(
-        "Lỗi",
-        err?.message || "Không thể cập nhật chương trình khuyến mãi",
-        "error"
-      );
+      if (err.name === "ValidationError") {
+        // Gom tất cả lỗi thành 1 thông báo duy nhất
+        const message = err.errors.join("\n");
+        toast.error(message, { duration: 5000 });
+      } else {
+        console.error(err);
+        toast.error(
+          err?.message || "Không thể cập nhật chương trình khuyến mãi."
+        );
+      }
     } finally {
       setLoading(false);
     }

@@ -50,3 +50,42 @@ export interface InventoryUpdateRequest {
 }
 
 export type SimpleInventoryListResponse = Inventory[];
+
+export interface InventoryTransferRequest {
+  variant: string; // _id của variant
+  color: string; // _id của color
+  fromDealerId: string;
+  toDealerId: string;
+  quantity: number;
+}
+
+/** Response trả về sau khi transfer thành công */
+export interface InventoryTransferResponse {
+  message: string;
+  from: {
+    _id: string;
+    ownerType: "Dealer" | "Warehouse" | "Manufacturer";
+    owner: string; // _id của dealer/warehouse
+    variant: string; // _id của variant
+    color: string; // _id của color
+    quantity: number;
+    reserved: number;
+    vinList: string[];
+    __v: number;
+    createdAt: string;
+    updatedAt: string;
+  };
+  to: {
+    _id: string;
+    ownerType: "Dealer" | "Warehouse" | "Manufacturer";
+    owner: string; // _id của dealer/warehouse
+    variant: string; // _id của variant
+    color: string; // _id của color
+    quantity: number;
+    reserved: number;
+    vinList: string[];
+    __v: number;
+    createdAt: string;
+    updatedAt: string;
+  };
+}

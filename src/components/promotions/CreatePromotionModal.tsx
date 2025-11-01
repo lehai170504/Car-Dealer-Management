@@ -45,7 +45,7 @@ export function CreatePromotionModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg bg-gray-900 text-gray-100 rounded-xl shadow-lg">
         <DialogHeader className="border-b border-gray-700 pb-2">
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="text-xl font-semibold text-emerald-600">
             Tạo chương trình khuyến mãi mới
           </DialogTitle>
         </DialogHeader>
@@ -152,8 +152,8 @@ export function CreatePromotionModal({
                 <SelectValue placeholder="Chọn trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="active">Đang hoạt động</SelectItem>
+                <SelectItem value="inactive">Không hoạt động</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -161,7 +161,7 @@ export function CreatePromotionModal({
 
         <DialogFooter className="mt-6 flex justify-end gap-2 border-t border-gray-700 pt-3">
           <Button
-            className="bg-sky-600 hover:bg-sky-700"
+            className="bg-emerald-600 hover:bg-emerald-700"
             onClick={() => hook.handleSubmit(onSuccess, handleClose)}
             disabled={hook.loading}
           >

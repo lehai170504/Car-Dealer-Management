@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 import { dealerService } from "@/services/dealers/dealerService";
-import { Dealer, DealerCredentials, DealerContact } from "@/types/dealer";
+import { Dealer, UpdateDealerRequest, DealerContact } from "@/types/dealer";
+import { dealerSchema } from "@/validations/dealerSchema";
 
 interface UseUpdateDealerResult {
   editMode: boolean;
   setEditMode: (mode: boolean) => void;
-  formData: DealerCredentials;
-  handleChange: <K extends keyof DealerCredentials>(
+  formData: UpdateDealerRequest;
+  handleChange: <K extends keyof UpdateDealerRequest>(
     key: K,
-    value: DealerCredentials[K]
+    value: UpdateDealerRequest[K]
   ) => void;
   setContactField: (
     index: number,
@@ -25,16 +26,51 @@ export const useUpdateDealer = (
   initialDealer: Dealer
 ): UseUpdateDealerResult => {
   const [editMode, setEditMode] = useState(false);
-  const [formData, setFormData] = useState<DealerCredentials>({
-    name: initialDealer.name,
-    code: initialDealer.code,
-    region: initialDealer.region,
-    address: initialDealer.address,
-    contacts: initialDealer.contacts,
-    creditLimit: initialDealer.creditLimit,
-    status: initialDealer.status,
-  });
+  const [formData, setFormData] = useState<UpdateDealerRequest>({});
+  const [changedFields, setChangedFields] = useState<
+    Partial<UpdateDealerRequest>
+  >({});
   const [isUpdateLoading, setIsUpdateLoading] = useState(false);
+
+  // Reset form khi initialDealer thay đổi
+  useEffect(() => {
+    setFormData({
+      name: initialDealer.name,
+      code: initialDealer.code,
+      region: initialDealer.region,
+      address: initialDealer.address,
+      contacts: initialDealer.contacts,
+      creditLimit: initialDealer.creditLimit,
+      status: initialDealer.status,
+    });
+    setChangedFields({});
+    setEditMode(false);
+  }, [initialDealer]);
+
+  const handleChange = <K extends keyof UpdateDealerRequest>(
+    key: K,
+    value: UpdateDealerRequest[K]
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: key === "creditLimit" ? Number(value) : value,
+    }));
+    // Lưu lại field thay đổi
+    setChangedFields((prev) => ({
+      ...prev,
+      [key]: key === "creditLimit" ? Number(value) : value,
+    }));
+  };
+
+  const setContactField = (
+    index: number,
+    field: keyof DealerContact,
+    value: string
+  ) => {
+    const newContacts = [...(formData.contacts || [])];
+    newContacts[index] = { ...newContacts[index], [field]: value };
+    handleChange("contacts", newContacts);
+  };
 
   const cancelEdit = () => {
     setFormData({
@@ -46,71 +82,31 @@ export const useUpdateDealer = (
       creditLimit: initialDealer.creditLimit,
       status: initialDealer.status,
     });
+    setChangedFields({});
     setEditMode(false);
-  };
-  useEffect(() => {
-    setFormData({
-      name: initialDealer.name,
-      code: initialDealer.code,
-      region: initialDealer.region,
-      address: initialDealer.address,
-      contacts: initialDealer.contacts,
-      creditLimit: initialDealer.creditLimit,
-      status: initialDealer.status,
-    });
-  }, [initialDealer]);
-
-  const handleChange = <K extends keyof DealerCredentials>(
-    key: K,
-    value: DealerCredentials[K]
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: key === "creditLimit" ? Number(value) : value,
-    }));
-  };
-
-  const setContactField = (
-    index: number,
-    field: keyof DealerContact,
-    value: string
-  ) => {
-    const newContacts = [...formData.contacts];
-    newContacts[index] = { ...newContacts[index], [field]: value };
-    setFormData((prev) => ({ ...prev, contacts: newContacts }));
   };
 
   const handleUpdate = async (onUpdated: () => void, onClose: () => void) => {
-    if (
-      !formData.name ||
-      !formData.code ||
-      !formData.region ||
-      !formData.address ||
-      formData.contacts.some((c) => !c.name || !c.phone || !c.email)
-    ) {
-      Swal.fire(
-        "Thiếu thông tin",
-        "Vui lòng điền đầy đủ tất cả các trường và thông tin liên hệ!",
-        "warning"
-      );
-      return;
-    }
-
     try {
-      setIsUpdateLoading(true);
-      await dealerService.updateDealer(initialDealer._id, formData);
+      // Validate chỉ những field người dùng thay đổi
+      const validateData: UpdateDealerRequest = { ...changedFields };
+      await dealerSchema.validate(validateData, { abortEarly: false });
 
-      Swal.fire(
-        "Thành công",
-        "Cập nhật thông tin Dealer thành công",
-        "success"
-      );
+      setIsUpdateLoading(true);
+      await dealerService.updateDealer(initialDealer._id, validateData);
+
+      toast.success("Cập nhật Dealer thành công!");
       setEditMode(false);
+      setChangedFields({});
       onUpdated();
       onClose();
     } catch (err: any) {
-      console.error(err);
-      Swal.fire("Lỗi", err?.message || "Không thể cập nhật Dealer", "error");
+      if (err.name === "ValidationError") {
+        err.inner.forEach((e: any) => toast.warning(e.message));
+      } else {
+        console.error(err);
+        toast.error(err?.message || "Không thể cập nhật Dealer");
+      }
     } finally {
       setIsUpdateLoading(false);
     }

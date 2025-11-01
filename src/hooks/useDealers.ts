@@ -1,68 +1,56 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Dealer } from "@/types/dealer";
+import { Dealer, DealerInventory, UpdateDealerRequest } from "@/types/dealer";
 import { dealerService } from "@/services/dealers/dealerService";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 
 interface UseDealersResult {
   dealers: Dealer[];
   filteredDealers: Dealer[];
   selectedDealer: Dealer | null;
+  dealerInventory: DealerInventory[];
   loading: boolean;
+  inventoryLoading: boolean;
   error: string | null;
   search: string;
   setSearch: (s: string) => void;
 
-  page: number;
-  setPage: (p: number) => void;
-  limit: number;
-  total: number;
-
-  fetchDealers: (page?: number) => Promise<void>;
+  fetchDealers: () => Promise<void>;
   fetchDealerById: (id: string) => Promise<void>;
+  fetchDealerInventory: (id: string) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
+  handleToggleStatus: (
+    id: string,
+    status: "active" | "inactive"
+  ) => Promise<void>;
 }
 
-/** 🧩 Hook quản lý danh sách Dealer */
+/** 🧩 Hook quản lý danh sách Dealer + Inventory */
 export const useDealers = (): UseDealersResult => {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
+  const [dealerInventory, setDealerInventory] = useState<DealerInventory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // Pagination
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-
-  /** 🔵 Lấy danh sách dealers (phân trang) */
-  const fetchDealers = useCallback(
-    async (pageNumber: number = page) => {
-      try {
-        setLoading(true);
-        const res = await dealerService.getAllDealers({
-          page: pageNumber,
-          limit,
-        });
-
-        setDealers(res.items ?? []);
-        setTotal(res.total ?? 0);
-
-        if (typeof res.page === "number") setPage(res.page);
-        if (typeof res.limit === "number") setLimit(res.limit);
-
-        setError(null);
-      } catch (err: any) {
-        console.error("❌ Lỗi khi tải danh sách dealers:", err);
-        setError(err?.message || "Không thể tải danh sách dealers.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [page, limit]
-  );
+  /** 🔵 Lấy danh sách dealers */
+  const fetchDealers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await dealerService.getAllDealers();
+      setDealers(data);
+      setError(null);
+    } catch (err: any) {
+      console.error("❌ Lỗi khi tải danh sách dealers:", err);
+      setError(err?.message || "Không thể tải danh sách dealers.");
+      toast.error(err?.message || "Không thể tải danh sách dealers.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   /** 🟢 Lấy chi tiết dealer theo ID */
   const fetchDealerById = useCallback(async (id: string) => {
@@ -74,39 +62,68 @@ export const useDealers = (): UseDealersResult => {
     } catch (err: any) {
       console.error(`❌ Lỗi khi lấy dealer ID ${id}:`, err);
       setError(err?.message || "Không thể tải thông tin dealer.");
+      toast.error(err?.message || "Không thể tải thông tin dealer.");
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  /** 🟣 Lấy inventory dealer theo ID */
+  const fetchDealerInventory = useCallback(async (id: string) => {
+    try {
+      setInventoryLoading(true); // ✅ dùng riêng
+      const data = await dealerService.getDealerInventory(id);
+      setDealerInventory(data);
+      setError(null);
+    } catch (err: any) {
+      console.error(`❌ Lỗi khi lấy inventory dealer ID ${id}:`, err);
+      setError(err?.message || "Không thể tải inventory dealer.");
+      toast.error(err?.message || "Không thể tải inventory dealer.");
+    } finally {
+      setInventoryLoading(false); // ✅ kết thúc riêng
     }
   }, []);
 
   /** 🔴 Xóa dealer */
   const handleDelete = useCallback(
     async (id: string) => {
-      const confirm = await Swal.fire({
-        title: "Xóa đại lý?",
-        text: "Hành động này không thể hoàn tác!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Xóa",
-        cancelButtonText: "Hủy",
-        confirmButtonColor: "#dc2626",
-      });
-
-      if (!confirm.isConfirmed) return;
+      const confirm = window.confirm(
+        "Xóa đại lý? Hành động này không thể hoàn tác!"
+      );
+      if (!confirm) return;
 
       try {
         setLoading(true);
         await dealerService.deleteDealer(id);
-        Swal.fire("Đã xóa!", "Đại lý đã bị xóa thành công.", "success");
-        await fetchDealers(page);
+        toast.success("Đại lý đã bị xóa thành công.");
+        await fetchDealers();
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa dealer:", err);
-        Swal.fire("Lỗi", err?.message || "Không thể xóa đại lý", "error");
+        toast.error(err?.message || "Không thể xóa đại lý");
       } finally {
         setLoading(false);
       }
     },
-    [fetchDealers, page]
+    [fetchDealers]
+  );
+
+  /** 🟠 Toggle status dealer */
+  const handleToggleStatus = useCallback(
+    async (id: string, status: "active" | "inactive") => {
+      try {
+        setLoading(true);
+        const payload: UpdateDealerRequest = { status };
+        await dealerService.updateDealer(id, payload);
+        toast.success(`Dealer đã được chuyển sang trạng thái ${status}.`);
+        await fetchDealers();
+      } catch (err: any) {
+        console.error(`❌ Lỗi khi cập nhật status dealer ID ${id}:`, err);
+        toast.error(err?.message || "Không thể cập nhật trạng thái dealer.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDealers]
   );
 
   /** 🧮 Lọc danh sách client-side */
@@ -118,7 +135,7 @@ export const useDealers = (): UseDealersResult => {
         d.name.toLowerCase().includes(lower) ||
         d.region.toLowerCase().includes(lower) ||
         d.address.toLowerCase().includes(lower) ||
-        d.contacts.some(
+        d.contacts?.some(
           (c) =>
             c.name.toLowerCase().includes(lower) ||
             c.phone.toLowerCase().includes(lower) ||
@@ -129,23 +146,23 @@ export const useDealers = (): UseDealersResult => {
 
   /** 🪄 Gọi lần đầu */
   useEffect(() => {
-    fetchDealers(page);
-  }, [fetchDealers, page]);
+    fetchDealers();
+  }, [fetchDealers]);
 
   return {
     dealers,
     filteredDealers,
     selectedDealer,
+    dealerInventory,
     loading,
+    inventoryLoading, // ✅ trả về riêng
     error,
     search,
     setSearch,
-    page,
-    setPage,
-    limit,
-    total,
     fetchDealers,
     fetchDealerById,
+    fetchDealerInventory,
     handleDelete,
+    handleToggleStatus,
   };
 };

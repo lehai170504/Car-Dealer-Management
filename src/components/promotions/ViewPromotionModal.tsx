@@ -61,7 +61,7 @@ export function ViewPromotionModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg bg-gray-900 text-gray-100 rounded-xl shadow-lg">
         <DialogHeader className="border-b border-gray-700 pb-2">
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="text-xl font-semibold text-emerald-600">
             Chi tiết chương trình khuyến mãi
           </DialogTitle>
         </DialogHeader>
@@ -200,8 +200,8 @@ export function ViewPromotionModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="active">Đang hoạt động</SelectItem>
+                <SelectItem value="inactive">Không hoạt động</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -221,7 +221,7 @@ export function ViewPromotionModal({
               <Button
                 onClick={() => handleUpdate(onUpdated, handleClose)}
                 disabled={loading}
-                className="bg-sky-600 hover:bg-sky-700"
+                className="bg-emerald-600 hover:bg-emerald-700"
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Lưu
@@ -230,7 +230,7 @@ export function ViewPromotionModal({
           ) : (
             <Button
               onClick={() => setEditMode(true)}
-              className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
             >
               <Edit2 className="h-4 w-4" /> Chỉnh sửa
             </Button>

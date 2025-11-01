@@ -83,4 +83,21 @@ export const vehicleService = {
       );
     }
   },
+  /** So sánh nhiều vehicle theo ID */
+  compareVehicles: async (ids: string[]): Promise<Vehicle[]> => {
+    try {
+      // Chuyển mảng ids thành string phân tách bằng dấu phẩy
+      const idsQuery = ids.join(",");
+      const res = await axiosInstance.get<VehicleListResponse>(
+        `${endpoint}/compare`,
+        { params: { ids: idsQuery } }
+      );
+      return res.data?.data || [];
+    } catch (error: any) {
+      console.error(`❌ Error comparing vehicles [${ids.join(", ")}]:`, error);
+      throw new Error(
+        error.response?.data?.message || "Failed to compare vehicles"
+      );
+    }
+  },
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -15,48 +15,31 @@ import { Button } from "@/components/ui/button";
 import { User, Lock, Settings, Mail, Briefcase, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
-import { UserProfile } from "@/types/auth";
-import { getProfile } from "@/services/auth/authService";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export default function EVM_ProfilePage() {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState("");
+  const {
+    userProfile,
+    isLoading,
+    error,
+    userName,
+    setUserName,
+    refreshProfile,
+  } = useUserProfile();
+
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const profileData = await getProfile();
+  const isAdmin = useMemo(() => userProfile?.role === "Admin", [userProfile]);
 
-        if (profileData) {
-          setUserProfile(profileData);
-          setUserName(profileData.name);
-        } else {
-          setUserProfile(null);
-        }
-      } catch (error) {
-        console.error("Lỗi khi tải thông tin người dùng:", error);
-        setUserProfile(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  const isAdmin = useMemo(() => {
-    return userProfile?.role === "Admin";
-  }, [userProfile]);
-
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     console.log("Đang lưu thông tin EVM:", { name: userName });
     setIsSaving(true);
+
+    // Giả lập lưu
     setTimeout(() => {
-      setUserProfile((prev) => (prev ? { ...prev, name: userName } : null));
       console.log("Lưu thông tin thành công!");
       setIsSaving(false);
+      refreshProfile(); // refresh lại profile
     }, 1500);
   };
 
@@ -77,11 +60,12 @@ export default function EVM_ProfilePage() {
     );
   }
 
-  if (!userProfile) {
+  if (error || !userProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-800 text-gray-100">
         <p className="text-xl text-red-400">
-          ⚠️ Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.
+          {error ||
+            "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại."}
         </p>
       </div>
     );
@@ -124,6 +108,7 @@ export default function EVM_ProfilePage() {
           )}
         </TabsList>
 
+        {/* Tab Account */}
         <TabsContent value="account" className="pt-4">
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
@@ -187,20 +172,20 @@ export default function EVM_ProfilePage() {
                   />
                 </div>
               </div>
+
               <Button
                 onClick={handleSaveProfile}
-                disabled={isSaving || userName === userProfile.name}
+                disabled={isSaving || userName === userProfile.profile?.name}
                 className="bg-sky-600 hover:bg-sky-700 text-white"
               >
-                {isSaving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Lưu Thay đổi
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Tab Security */}
         <TabsContent value="security" className="pt-4">
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
@@ -258,6 +243,7 @@ export default function EVM_ProfilePage() {
           </Card>
         </TabsContent>
 
+        {/* Tab Settings chỉ admin */}
         {isAdmin && (
           <TabsContent value="settings" className="pt-4">
             <Card className="bg-gray-800 border-gray-700">

@@ -1,5 +1,10 @@
 "use client";
 
+import { useFormik } from "formik";
+import { vehicleModelSchema } from "@/validations/vehicleModelSchema";
+import { useVehicleModels } from "@/hooks/useVehicleModels";
+import { CreateVehicleModelRequest } from "@/types/vehicleModels";
+
 import {
   Dialog,
   DialogContent,
@@ -16,12 +21,11 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { useCreateVehicleModel } from "@/hooks/useCreateVehicleModel";
 
 interface CreateVehicleModelModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 export function CreateVehicleModelModal({
@@ -29,13 +33,36 @@ export function CreateVehicleModelModal({
   onOpenChange,
   onSuccess,
 }: CreateVehicleModelModalProps) {
-  const createHook = useCreateVehicleModel();
+  const { handleCreate, loading } = useVehicleModels();
+
+  const formik = useFormik<CreateVehicleModelRequest>({
+    initialValues: {
+      name: "",
+      brand: "",
+      segment: "",
+      description: "",
+      active: true,
+    },
+    validationSchema: vehicleModelSchema,
+    onSubmit: async (values) => {
+      await handleCreate(values);
+      formik.resetForm();
+      onOpenChange(false);
+      onSuccess?.();
+    },
+  });
 
   const inputClass =
     "bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(val) => {
+        onOpenChange(val);
+        if (!val) formik.resetForm();
+      }}
+    >
       <DialogContent className="sm:max-w-lg bg-gray-900 text-gray-100 rounded-xl shadow-lg">
         <DialogHeader className="border-b border-gray-700 pb-2">
           <DialogTitle className="text-xl font-semibold">
@@ -43,46 +70,78 @@ export function CreateVehicleModelModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
+        <form onSubmit={formik.handleSubmit} className="space-y-4 mt-4">
           {/* 📝 Name */}
-          <Input
-            placeholder="Tên Model"
-            value={createHook.name}
-            onChange={(e) => createHook.setName(e.target.value)}
-            className={inputClass}
-          />
+          <div>
+            <Input
+              name="name"
+              placeholder="Tên Model"
+              value={formik.values.name}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={inputClass}
+            />
+            {formik.touched.name && formik.errors.name && (
+              <p className="text-red-400 text-sm mt-1">{formik.errors.name}</p>
+            )}
+          </div>
 
           {/* 🏷 Brand */}
-          <Input
-            placeholder="Thương hiệu"
-            value={createHook.brand}
-            onChange={(e) => createHook.setBrand(e.target.value)}
-            className={inputClass}
-          />
+          <div>
+            <Input
+              name="brand"
+              placeholder="Thương hiệu"
+              value={formik.values.brand}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={inputClass}
+            />
+            {formik.touched.brand && formik.errors.brand && (
+              <p className="text-red-400 text-sm mt-1">{formik.errors.brand}</p>
+            )}
+          </div>
 
           {/* 📊 Segment */}
-          <Input
-            placeholder="Phân khúc"
-            value={createHook.segment}
-            onChange={(e) => createHook.setSegment(e.target.value)}
-            className={inputClass}
-          />
+          <div>
+            <Input
+              name="segment"
+              placeholder="Phân khúc"
+              value={formik.values.segment}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={inputClass}
+            />
+            {formik.touched.segment && formik.errors.segment && (
+              <p className="text-red-400 text-sm mt-1">
+                {formik.errors.segment}
+              </p>
+            )}
+          </div>
 
           {/* 📝 Description */}
-          <Input
-            placeholder="Mô tả (tùy chọn)"
-            value={createHook.description}
-            onChange={(e) => createHook.setDescription(e.target.value)}
-            className={inputClass}
-          />
+          <div>
+            <Input
+              name="description"
+              placeholder="Mô tả (tùy chọn)"
+              value={formik.values.description}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              className={inputClass}
+            />
+            {formik.touched.description && formik.errors.description && (
+              <p className="text-red-400 text-sm mt-1">
+                {formik.errors.description}
+              </p>
+            )}
+          </div>
 
           {/* 🟢 Active */}
           <div>
             <label className="text-sm text-gray-300">Trạng thái</label>
             <Select
-              value={createHook.active ? "active" : "inactive"}
+              value={formik.values.active ? "active" : "inactive"}
               onValueChange={(val) =>
-                createHook.setActive(val === "active" ? true : false)
+                formik.setFieldValue("active", val === "active")
               }
             >
               <SelectTrigger className={`${inputClass} mt-1`}>
@@ -94,29 +153,29 @@ export function CreateVehicleModelModal({
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        <DialogFooter className="mt-6 flex justify-end gap-2 border-t border-gray-700 pt-3">
-          <Button
-            variant="outline"
-            onClick={() => {
-              onOpenChange(false);
-              createHook.resetForm();
-            }}
-            className="hover:bg-gray-700 text-neutral-600"
-          >
-            Hủy
-          </Button>
-          <Button
-            className="bg-sky-600 hover:bg-sky-700"
-            onClick={() =>
-              createHook.handleSubmit(onSuccess, () => onOpenChange(false))
-            }
-            disabled={createHook.loading}
-          >
-            {createHook.loading ? "Đang tạo..." : "Tạo"}
-          </Button>
-        </DialogFooter>
+          {/* 🔘 Footer */}
+          <DialogFooter className="mt-6 flex justify-end gap-2 border-t border-gray-700 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                onOpenChange(false);
+                formik.resetForm();
+              }}
+              className="hover:bg-gray-700 text-gray-400 border-gray-600"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              className="bg-sky-600 hover:bg-sky-700"
+              disabled={loading}
+            >
+              {loading ? "Đang tạo..." : "Tạo"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

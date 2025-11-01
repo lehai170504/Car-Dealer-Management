@@ -1,16 +1,17 @@
 import { useState } from "react";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 import { dealerService } from "@/services/dealers/dealerService";
-import { DealerCredentials, DealerContact, DealerStatus } from "@/types/dealer";
+import { CreateDealerRequest, DealerContact } from "@/types/dealer";
+import { dealerSchema } from "@/validations/dealerSchema";
 
 const initialContact: DealerContact = {
-  _id: "", // thường backend sẽ tạo
+  _id: "",
   name: "",
   phone: "",
   email: "",
 };
 
-const initialForm: DealerCredentials = {
+const initialForm: CreateDealerRequest = {
   name: "",
   code: "",
   region: "",
@@ -21,12 +22,13 @@ const initialForm: DealerCredentials = {
 };
 
 export const useCreateDealer = () => {
-  const [dealerForm, setDealerForm] = useState<DealerCredentials>(initialForm);
+  const [dealerForm, setDealerForm] =
+    useState<CreateDealerRequest>(initialForm);
   const [isCreateLoading, setIsCreateLoading] = useState(false);
 
-  const setDealerField = <K extends keyof DealerCredentials>(
+  const setDealerField = <K extends keyof CreateDealerRequest>(
     key: K,
-    value: DealerCredentials[K]
+    value: CreateDealerRequest[K]
   ) => {
     setDealerForm((prev) => ({
       ...prev,
@@ -50,33 +52,25 @@ export const useCreateDealer = () => {
     onClose: () => void,
     onSuccess: () => void
   ) => {
-    const { name, code, region, address, contacts } = dealerForm;
-    if (
-      !name ||
-      !code ||
-      !region ||
-      !address ||
-      contacts.some((c) => !c.name || !c.phone || !c.email)
-    ) {
-      Swal.fire(
-        "Thiếu thông tin",
-        "Vui lòng điền đầy đủ tất cả các trường và thông tin liên hệ!",
-        "warning"
-      );
-      return false;
-    }
-
     try {
+      // Validate form
+      await dealerSchema.validate(dealerForm, { abortEarly: false });
+
       setIsCreateLoading(true);
       await dealerService.createDealer(dealerForm);
-      Swal.fire("Thành công!", "Đã thêm Dealer mới.", "success");
+      toast.success("Đã thêm đại lí mới thành công!");
       resetDealerForm();
       onClose();
       onSuccess();
       return true;
     } catch (error: any) {
-      console.error(error);
-      Swal.fire("Lỗi", error?.message || "Không thể tạo Dealer.", "error");
+      if (error.name === "ValidationError") {
+        // Nếu là lỗi Yup validation
+        error.errors.forEach((errMsg: string) => toast.error(errMsg));
+      } else {
+        console.error("❌ Error creating dealer:", error);
+        toast.error(error?.message || "Không thể tạo Dealer.");
+      }
       return false;
     } finally {
       setIsCreateLoading(false);

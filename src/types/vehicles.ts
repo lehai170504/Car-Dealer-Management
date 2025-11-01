@@ -1,22 +1,11 @@
 // src/types/vehicles.ts
 
-/** Dữ liệu Vehicle Model */
-export interface VehicleModel {
-  _id: string;
-  name: string;
-  brand: string;
-  segment: string;
-  description?: string;
-  active: boolean;
-  __v: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { VehicleModel } from "./vehicleModels";
 
 /** Dữ liệu Vehicle Variant (response từ API) */
 export interface Vehicle {
   _id: string;
-  model: VehicleModel | null; // Có thể null như trong response
+  model: VehicleModel | null;
   trim: string;
   battery: string;
   range: number;

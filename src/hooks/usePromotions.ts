@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Promotion } from "@/types/promotions";
 import { promotionService } from "@/services/promotions/promotionService";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 
 interface UsePromotionsResult {
   promotions: Promotion[];
@@ -33,7 +33,9 @@ export const usePromotions = (): UsePromotionsResult => {
       setError(null);
     } catch (err: any) {
       console.error("❌ Lỗi khi tải danh sách promotions:", err);
-      setError(err?.message || "Không thể tải danh sách promotions từ API.");
+      const msg = err?.message || "Không thể tải danh sách promotions từ API.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -42,33 +44,22 @@ export const usePromotions = (): UsePromotionsResult => {
   // === Xóa promotion ===
   const handleDelete = useCallback(
     async (id: string) => {
-      const confirm = await Swal.fire({
-        title: "Xóa chương trình khuyến mãi?",
-        text: "Hành động này không thể hoàn tác!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Xóa",
-        cancelButtonText: "Hủy",
-        confirmButtonColor: "#dc2626",
-      });
-      if (!confirm.isConfirmed) return;
+      if (
+        !confirm(
+          "Bạn có chắc muốn xóa chương trình khuyến mãi này? Hành động này không thể hoàn tác!"
+        )
+      ) {
+        return;
+      }
 
       try {
         setLoading(true);
         await promotionService.deletePromotion(id);
-        Swal.fire(
-          "Đã xóa!",
-          "Chương trình khuyến mãi đã bị xóa thành công.",
-          "success"
-        );
+        toast.success("Chương trình khuyến mãi đã được xóa thành công.");
         await fetchPromotions();
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa promotion:", err);
-        Swal.fire(
-          "Lỗi",
-          err?.message || "Không thể xóa chương trình khuyến mãi",
-          "error"
-        );
+        toast.error(err?.message || "Không thể xóa chương trình khuyến mãi");
       } finally {
         setLoading(false);
       }

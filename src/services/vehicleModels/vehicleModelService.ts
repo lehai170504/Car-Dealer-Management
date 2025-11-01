@@ -11,48 +11,41 @@ import {
 const endpoint = "/vehicle-models";
 
 export const vehicleModelService = {
-  /** 🟦 Lấy danh sách Vehicle Models (hỗ trợ phân trang) */
-  getAllVehicleModels: async (params?: {
-    page?: number;
-    limit?: number;
-  }): Promise<VehicleModelListResponse> => {
+  /** 🟦 Lấy danh sách tất cả các Mẫu Xe (Vehicle Models) */
+  getAllVehicleModels: async (
+    params?: Record<string, any>
+  ): Promise<VehicleModelListResponse> => {
     try {
       const res = await axiosInstance.get<VehicleModelListResponse>(endpoint, {
         params,
       });
 
-      // Đảm bảo dữ liệu có đủ structure
-      const data = res.data || {};
-      return {
-        items: data.items || [],
-        total: data.total ?? 0,
-        page: data.page ?? params?.page ?? 1,
-        limit: data.limit ?? params?.limit ?? 10,
-      };
+      // Đảm bảo luôn trả về một mảng VehicleModel[]
+      return Array.isArray(res.data) ? res.data : [];
     } catch (error: any) {
-      console.error("❌ Error fetching vehicle models:", error);
+      console.error("❌ Lỗi khi lấy danh sách mẫu xe:", error);
       throw new Error(
-        error.response?.data?.message || "Failed to fetch vehicle models"
+        error.response?.data?.message || "Không thể lấy danh sách mẫu xe"
       );
     }
   },
 
-  /** 🟩 Lấy chi tiết Vehicle Model theo ID */
-  getVehicleModelById: async (id: string): Promise<VehicleModelResponse> => {
+  /** 🟩 Lấy chi tiết Mẫu Xe theo ID */
+  getDetailVehicleModel: async (id: string): Promise<VehicleModelResponse> => {
     try {
       const res = await axiosInstance.get<VehicleModelResponse>(
         `${endpoint}/${id}`
       );
       return res.data;
     } catch (error: any) {
-      console.error(`❌ Error fetching vehicle model ID ${id}:`, error);
+      console.error(`❌ Lỗi khi lấy chi tiết mẫu xe có ID ${id}:`, error);
       throw new Error(
-        error.response?.data?.message || "Failed to fetch vehicle model"
+        error.response?.data?.message || "Không thể lấy chi tiết mẫu xe"
       );
     }
   },
 
-  /** 🟢 Tạo Vehicle Model mới */
+  /** 🟢 Tạo mới Mẫu Xe */
   createVehicleModel: async (
     payload: CreateVehicleModelRequest
   ): Promise<VehicleModelResponse> => {
@@ -63,14 +56,14 @@ export const vehicleModelService = {
       );
       return res.data;
     } catch (error: any) {
-      console.error("❌ Error creating vehicle model:", error);
+      console.error("❌ Lỗi khi tạo mẫu xe mới:", error);
       throw new Error(
-        error.response?.data?.message || "Failed to create vehicle model"
+        error.response?.data?.message || "Không thể tạo mẫu xe mới"
       );
     }
   },
 
-  /** 🟡 Cập nhật Vehicle Model */
+  /** 🟡 Cập nhật thông tin Mẫu Xe */
   updateVehicleModel: async (
     id: string,
     payload: UpdateVehicleModelRequest
@@ -82,14 +75,14 @@ export const vehicleModelService = {
       );
       return res.data;
     } catch (error: any) {
-      console.error(`❌ Error updating vehicle model ID ${id}:`, error);
+      console.error(`❌ Lỗi khi cập nhật mẫu xe có ID ${id}:`, error);
       throw new Error(
-        error.response?.data?.message || "Failed to update vehicle model"
+        error.response?.data?.message || "Không thể cập nhật mẫu xe"
       );
     }
   },
 
-  /** 🔴 Xóa Vehicle Model */
+  /** 🔴 Xóa Mẫu Xe */
   deleteVehicleModel: async (id: string): Promise<{ success: boolean }> => {
     try {
       const res = await axiosInstance.delete<{ success: boolean }>(
@@ -97,10 +90,8 @@ export const vehicleModelService = {
       );
       return res.data;
     } catch (error: any) {
-      console.error(`❌ Error deleting vehicle model ID ${id}:`, error);
-      throw new Error(
-        error.response?.data?.message || "Failed to delete vehicle model"
-      );
+      console.error(`❌ Lỗi khi xóa mẫu xe có ID ${id}:`, error);
+      throw new Error(error.response?.data?.message || "Không thể xóa mẫu xe");
     }
   },
 };

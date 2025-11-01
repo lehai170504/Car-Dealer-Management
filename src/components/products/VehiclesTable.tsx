@@ -12,9 +12,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Eye, Trash2, Search } from "lucide-react";
-import { useVehicles } from "@/hooks/useVehicles";
 import { CreateVehicleModal } from "./CreateVehicleModal";
 import { VehicleDetailModal } from "./VehicleDetailModal";
+import { useVehicles } from "@/hooks/useVehicles";
+import { CompareVehiclesModal } from "./CompareVehiclesModal";
 
 export function VehiclesTable() {
   const hook = useVehicles();
@@ -23,10 +24,18 @@ export function VehiclesTable() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
 
-  useEffect(() => {
-    hook.setSearch(searchText);
-  }, [searchText]);
+  // So sánh xe
+  const [compareSelection, setCompareSelection] = useState<string[]>([]);
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [compareResults, setCompareResults] = useState<any[]>([]);
 
+  /** 🔍 Debounce search */
+  useEffect(() => {
+    const delay = setTimeout(() => hook.setSearch(searchText), 300);
+    return () => clearTimeout(delay);
+  }, [searchText, hook]);
+
+  /** 🧭 Hiển thị hành động */
   const renderActions = (item: any) => (
     <div className="flex gap-2 justify-end">
       <Button
@@ -38,8 +47,9 @@ export function VehiclesTable() {
           setDetailModalOpen(true);
         }}
       >
-        <Eye className="h-4 w-4 text-sky-400" />
+        <Eye className="h-4 w-4 text-emerald-400" />
       </Button>
+
       <Button
         size="icon"
         variant="outline"
@@ -51,18 +61,34 @@ export function VehiclesTable() {
     </div>
   );
 
+  /** 🔄 Loading state */
   if (hook.loading)
     return (
-      <div className="flex items-center justify-center py-12 text-sky-400/80">
+      <div className="flex items-center justify-center py-12 text-emerald-400/80">
         <Loader2 className="animate-spin mr-2" />
-        Đang tải...
+        Đang tải dữ liệu...
       </div>
     );
-  if (hook.error) return <div className="text-red-400 py-6">{hook.error}</div>;
+
+  /** ❌ Error state */
+  if (hook.error)
+    return (
+      <div className="text-red-400 text-center py-8">
+        {hook.error || "Đã xảy ra lỗi."}
+      </div>
+    );
+
+  /** 🔄 Compare vehicles */
+  const handleCompare = async () => {
+    if (compareSelection.length < 2) return;
+    const results = await hook.compareVehicles(compareSelection);
+    setCompareResults(results);
+    setCompareModalOpen(true);
+  };
 
   return (
     <div className="space-y-4">
-      {/* Header: Search + Create */}
+      {/* ==== Header: Search + Create + Compare ==== */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="relative w-full sm:w-1/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -73,27 +99,40 @@ export function VehiclesTable() {
             className="pl-10 bg-gray-700 border-gray-600 text-gray-50 rounded-lg shadow-inner"
           />
         </div>
-        <Button
-          className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
-          onClick={() => setCreateModalOpen(true)}
-        >
-          <Plus className="h-4 w-4" /> Thêm Xe Mới
-        </Button>
+
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+            onClick={() => setCreateModalOpen(true)}
+          >
+            <Plus className="h-4 w-4" /> Thêm Xe Mới
+          </Button>
+          <Button
+            className="bg-sky-600 hover:bg-sky-700 text-white"
+            disabled={compareSelection.length < 2}
+            onClick={handleCompare}
+          >
+            So sánh xe
+          </Button>
+        </div>
       </div>
 
-      {/* Table */}
+      {/* ==== Table ==== */}
       <div className="overflow-x-auto border border-gray-700 rounded-lg bg-gray-800">
         <Table>
           <TableHeader className="bg-gray-700/80">
             <TableRow>
+              <TableHead>Chọn</TableHead>
               <TableHead>STT</TableHead>
               <TableHead>Model</TableHead>
               <TableHead>Brand</TableHead>
               <TableHead>Battery</TableHead>
               <TableHead>Trim</TableHead>
+              <TableHead>Active</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
             {hook.filteredVehicles.length > 0 ? (
               hook.filteredVehicles.map((v, idx) => (
@@ -101,6 +140,21 @@ export function VehiclesTable() {
                   key={v._id}
                   className="hover:bg-gray-700/50 transition-colors"
                 >
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={compareSelection.includes(v._id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setCompareSelection((prev) => [...prev, v._id]);
+                        } else {
+                          setCompareSelection((prev) =>
+                            prev.filter((id) => id !== v._id)
+                          );
+                        }
+                      }}
+                    />
+                  </TableCell>
                   <TableCell>{idx + 1}</TableCell>
                   <TableCell className="font-semibold text-sky-300">
                     {v.model?.name || "—"}
@@ -108,6 +162,18 @@ export function VehiclesTable() {
                   <TableCell>{v.model?.brand || "—"}</TableCell>
                   <TableCell>{v.battery}</TableCell>
                   <TableCell>{v.trim}</TableCell>
+                  <TableCell>
+                    <button
+                      onClick={() => hook.handleToggleStatus(v._id, !v.active)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
+                        v.active
+                          ? "bg-green-200 text-emerald-800 hover:bg-emerald-300"
+                          : "bg-red-200 text-red-800 hover:bg-red-300"
+                      }`}
+                    >
+                      {v.active ? "Đang hoạt động" : "Ngừng hoạt động"}
+                    </button>
+                  </TableCell>
                   <TableCell className="text-right">
                     {renderActions(v)}
                   </TableCell>
@@ -116,7 +182,7 @@ export function VehiclesTable() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={8}
                   className="text-center text-gray-400 py-6"
                 >
                   Không có dữ liệu
@@ -127,7 +193,7 @@ export function VehiclesTable() {
         </Table>
       </div>
 
-      {/* Modals */}
+      {/* ==== Modals ==== */}
       <CreateVehicleModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
@@ -142,6 +208,12 @@ export function VehiclesTable() {
           onUpdated={hook.fetchVehicles}
         />
       )}
+
+      <CompareVehiclesModal
+        open={compareModalOpen}
+        onOpenChange={setCompareModalOpen}
+        vehicles={compareResults}
+      />
     </div>
   );
 }

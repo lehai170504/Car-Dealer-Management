@@ -10,41 +10,63 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, Eye, Trash2, Loader2, Plus } from "lucide-react";
+import { Search, Eye, Trash2, Plus, Pencil, Box } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CreateDealerModal } from "@/components/dealers/CreateDealerModal";
 import { ViewDealerModal } from "@/components/dealers/ViewDealerModal";
+import { UpdateDealerTargetModal } from "@/components/dealers/UpdateDealerTargetModal";
+import { DealerInventoryModal } from "@/components/dealers/DealerInventoryModal";
 import { Dealer } from "@/types/dealer";
 import { useDealers } from "@/hooks/useDealers";
 import { Pagination } from "@/components/ui/pagination";
+import { useAuth } from "@/context/AuthContext";
 
 export function DealerTable() {
+  const { user } = useAuth();
+  const canEdit = user?.role === "Admin" || user?.role === "DealerManager";
+
   const {
     filteredDealers,
     loading,
     error,
     search,
     setSearch,
-    page,
-    setPage,
-    limit,
-    total,
     fetchDealers,
     handleDelete,
+    handleToggleStatus,
+    fetchDealerInventory,
+    dealerInventory,
+    inventoryLoading,
   } = useDealers();
+
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const total = filteredDealers.length;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedDealer, setSelectedDealer] = useState<Dealer | null>(null);
 
-  // Gọi lại API khi chuyển trang
+  const [targetModalOpen, setTargetModalOpen] = useState(false);
+  const [selectedDealerForTarget, setSelectedDealerForTarget] =
+    useState<Dealer | null>(null);
+
+  const [inventoryModalOpen, setInventoryModalOpen] = useState(false);
+  const [selectedDealerForInventory, setSelectedDealerForInventory] =
+    useState<Dealer | null>(null);
+
+  const paginatedDealers = filteredDealers.slice(
+    (page - 1) * limit,
+    page * limit
+  );
+
   useEffect(() => {
-    fetchDealers(page);
-  }, [page, fetchDealers]);
+    fetchDealers();
+  }, [fetchDealers]);
 
   return (
     <div className="space-y-6 p-4">
-      {/* Header: tìm kiếm + thêm dealer */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="relative w-full sm:w-1/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -56,19 +78,22 @@ export function DealerTable() {
           />
         </div>
 
-        <Button
-          className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          <Plus className="h-4 w-4" /> Thêm Đại lý Mới
-        </Button>
+        {/* Chỉ hiện nút tạo khi có quyền */}
+        {canEdit && (
+          <Button
+            className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <Plus className="h-4 w-4" /> Thêm Đại lý Mới
+          </Button>
+        )}
       </div>
 
-      {/* Table / Loading / Error */}
+      {/* Table */}
       <div className="border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-400">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            <Box className="mr-2 h-5 w-5 animate-spin" />
             Đang tải dữ liệu đại lý...
           </div>
         ) : error ? (
@@ -92,9 +117,10 @@ export function DealerTable() {
                 </TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {filteredDealers.length > 0 ? (
-                filteredDealers.map((dealer, index) => (
+              {paginatedDealers.length > 0 ? (
+                paginatedDealers.map((dealer, index) => (
                   <TableRow
                     key={dealer._id}
                     className="border-gray-700 hover:bg-gray-700/50 transition-colors"
@@ -113,19 +139,44 @@ export function DealerTable() {
                       {dealer.creditLimit?.toLocaleString("vi-VN")}
                     </TableCell>
                     <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded text-white ${
-                          dealer.status === "active"
-                            ? "bg-emerald-600"
-                            : "bg-gray-500"
-                        }`}
-                      >
-                        {dealer.status === "active"
-                          ? "Đang hoạt động"
-                          : "Ngưng hoạt động"}
-                      </span>
+                      {canEdit ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className={`text-white ${
+                            dealer.status === "active"
+                              ? "bg-emerald-600"
+                              : "bg-gray-500"
+                          }`}
+                          onClick={() =>
+                            handleToggleStatus(
+                              dealer._id!,
+                              dealer.status === "active" ? "inactive" : "active"
+                            )
+                          }
+                        >
+                          {dealer.status === "active"
+                            ? "Đang hoạt động"
+                            : "Ngưng hoạt động"}
+                        </Button>
+                      ) : (
+                        <span
+                          className={`px-2 py-1 rounded text-sm font-medium ${
+                            dealer.status === "active"
+                              ? "bg-emerald-600 text-white"
+                              : "bg-gray-500 text-gray-100"
+                          }`}
+                        >
+                          {dealer.status === "active"
+                            ? "Đang hoạt động"
+                            : "Ngưng hoạt động"}
+                        </span>
+                      )}
                     </TableCell>
+
+                    {/* Hành động */}
                     <TableCell className="text-right flex justify-end gap-2">
+                      {/* Xem chi tiết */}
                       <Button
                         variant="outline"
                         size="icon"
@@ -137,14 +188,44 @@ export function DealerTable() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+
+                      {/* Xem Inventory luôn hiển thị */}
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-red-400 hover:bg-gray-700 bg-gray-600 hover:border-red-500"
-                        onClick={() => handleDelete(dealer._id!)}
+                        className="border-gray-600 text-green-400 hover:bg-gray-700 hover:border-green-500 bg-gray-600"
+                        onClick={() => {
+                          setSelectedDealerForInventory(dealer);
+                          setInventoryModalOpen(true);
+                        }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Box className="h-4 w-4" />
                       </Button>
+
+                      {/* Chỉnh target luôn hiển thị */}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="border-gray-600 text-yellow-400 hover:bg-gray-700 hover:border-yellow-500 bg-gray-600"
+                        onClick={() => {
+                          setSelectedDealerForTarget(dealer);
+                          setTargetModalOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+
+                      {/* Xóa chỉ hiện khi có quyền */}
+                      {canEdit && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="border-gray-600 text-red-400 hover:bg-gray-700 bg-gray-600 hover:border-red-500"
+                          onClick={() => handleDelete(dealer._id!)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -176,11 +257,13 @@ export function DealerTable() {
       )}
 
       {/* Modals */}
-      <CreateDealerModal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={fetchDealers}
-      />
+      {canEdit && (
+        <CreateDealerModal
+          open={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={fetchDealers}
+        />
+      )}
 
       {selectedDealer && (
         <ViewDealerModal
@@ -188,6 +271,27 @@ export function DealerTable() {
           isOpen={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           onUpdated={fetchDealers}
+        />
+      )}
+
+      {selectedDealerForTarget && (
+        <UpdateDealerTargetModal
+          dealerId={selectedDealerForTarget._id}
+          initialTarget={selectedDealerForTarget.salesTarget || 0}
+          isOpen={targetModalOpen}
+          onClose={() => setTargetModalOpen(false)}
+          onUpdated={fetchDealers}
+        />
+      )}
+
+      {selectedDealerForInventory && (
+        <DealerInventoryModal
+          dealerId={selectedDealerForInventory._id}
+          isOpen={inventoryModalOpen}
+          onClose={() => setInventoryModalOpen(false)}
+          fetchInventory={fetchDealerInventory}
+          inventoryData={dealerInventory}
+          loading={inventoryLoading}
         />
       )}
     </div>

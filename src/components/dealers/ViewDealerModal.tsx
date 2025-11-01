@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Dealer, DealerContact, DealerStatus } from "@/types/dealer";
 import { useUpdateDealer } from "@/hooks/useUpdateDealer";
 import { FormattedNumberInput } from "../commons/FormattedNumberInput";
+import { useAuth } from "@/context/AuthContext";
 
 interface ViewDealerModalProps {
   isOpen: boolean;
@@ -26,6 +28,9 @@ export function ViewDealerModal({
   dealer,
   onUpdated,
 }: ViewDealerModalProps) {
+  const { user } = useAuth();
+  const canEdit = user?.role === "Admin" || user?.role === "DealerManager";
+
   const {
     editMode,
     setEditMode,
@@ -37,6 +42,9 @@ export function ViewDealerModal({
     cancelEdit,
   } = useUpdateDealer(dealer);
 
+  // Nếu user không có quyền, luôn để editMode = false
+  const effectiveEditMode = canEdit && editMode;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg bg-gray-800 text-gray-100">
@@ -47,49 +55,50 @@ export function ViewDealerModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Thông tin cơ bản */}
           <Input
             placeholder="Tên đại lý"
-            value={formData.name}
-            disabled={!editMode}
+            value={formData.name || ""}
+            disabled={!effectiveEditMode}
             onChange={(e) => handleChange("name", e.target.value)}
             className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-emerald-500"
           />
           <Input
             placeholder="Mã đại lý"
-            value={formData.code}
-            disabled={!editMode}
+            value={formData.code || ""}
+            disabled={!effectiveEditMode}
             onChange={(e) => handleChange("code", e.target.value)}
             className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-emerald-500"
           />
           <Input
             placeholder="Khu vực"
-            value={formData.region}
-            disabled={!editMode}
+            value={formData.region || ""}
+            disabled={!effectiveEditMode}
             onChange={(e) => handleChange("region", e.target.value)}
             className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-emerald-500"
           />
           <Input
             placeholder="Địa chỉ"
-            value={formData.address}
-            disabled={!editMode}
+            value={formData.address || ""}
+            disabled={!effectiveEditMode}
             onChange={(e) => handleChange("address", e.target.value)}
             className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-emerald-500"
           />
 
           {/* Liên hệ */}
-          {formData.contacts.map((contact: DealerContact, index: number) => (
-            <div key={index} className="grid grid-cols-3 gap-2">
+          {formData.contacts?.map((contact: DealerContact, index: number) => (
+            <div key={contact._id} className="grid grid-cols-3 gap-2">
               <Input
                 placeholder="Tên liên hệ"
-                value={contact.name}
-                disabled={!editMode}
+                value={contact.name || ""}
+                disabled={!effectiveEditMode}
                 onChange={(e) => setContactField(index, "name", e.target.value)}
                 className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400"
               />
               <Input
                 placeholder="SĐT"
-                value={contact.phone}
-                disabled={!editMode}
+                value={contact.phone || ""}
+                disabled={!effectiveEditMode}
                 onChange={(e) =>
                   setContactField(index, "phone", e.target.value)
                 }
@@ -98,8 +107,8 @@ export function ViewDealerModal({
               <Input
                 placeholder="Email"
                 type="email"
-                value={contact.email}
-                disabled={!editMode}
+                value={contact.email || ""}
+                disabled={!effectiveEditMode}
                 onChange={(e) =>
                   setContactField(index, "email", e.target.value)
                 }
@@ -110,25 +119,23 @@ export function ViewDealerModal({
 
           {/* Credit Limit & Status */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Credit Limit */}
-            <div className="space-y-1">
-              <FormattedNumberInput
-                label="Credit Limit (VNĐ)"
-                value={formData.creditLimit}
-                onChange={(val) => handleChange("creditLimit", val)}
-                className="bg-gray-700 border border-gray-600 text-gray-100 placeholder:text-gray-400 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
-                placeholder="Credit Limit (VNĐ)"
-              />
-            </div>
+            <FormattedNumberInput
+              label="Credit Limit (VNĐ)"
+              value={formData.creditLimit || 0}
+              onChange={(val) => handleChange("creditLimit", val)}
+              className="bg-gray-700 border border-gray-600 text-gray-100 placeholder:text-gray-400 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500"
+              placeholder="Credit Limit (VNĐ)"
+              labelClassName="text-gray-300 font-medium"
+              disabled={!effectiveEditMode}
+            />
 
-            {/* Status */}
             <div className="space-y-1">
               <label className="block text-gray-300 font-medium mb-1">
                 Trạng thái
               </label>
               <select
-                value={formData.status}
-                disabled={!editMode}
+                value={formData.status || "active"}
+                disabled={!effectiveEditMode}
                 onChange={(e) =>
                   handleChange("status", e.target.value as DealerStatus)
                 }
@@ -141,32 +148,35 @@ export function ViewDealerModal({
           </div>
         </div>
 
+        {/* Footer actions */}
         <DialogFooter className="space-x-2">
-          {editMode ? (
-            <>
+          {
+            effectiveEditMode ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={cancelEdit}
+                  className="border-gray-600 text-gray-600 hover:bg-gray-700/40"
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={() => handleUpdate(onUpdated, onClose)}
+                  disabled={isUpdateLoading}
+                  className="bg-sky-600 hover:bg-sky-700 text-white"
+                >
+                  {isUpdateLoading ? "Đang lưu..." : "Lưu thay đổi"}
+                </Button>
+              </>
+            ) : canEdit ? (
               <Button
-                variant="outline"
-                onClick={cancelEdit}
-                className="border-gray-600 text-gray-600 hover:bg-gray-700/40"
-              >
-                Hủy
-              </Button>
-              <Button
-                onClick={() => handleUpdate(onUpdated, onClose)}
-                disabled={isUpdateLoading}
+                onClick={() => setEditMode(true)}
                 className="bg-sky-600 hover:bg-sky-700 text-white"
               >
-                {isUpdateLoading ? "Đang lưu..." : "Lưu thay đổi"}
+                Chỉnh sửa
               </Button>
-            </>
-          ) : (
-            <Button
-              onClick={() => setEditMode(true)}
-              className="bg-sky-600 hover:bg-sky-700 text-white"
-            >
-              Chỉnh sửa
-            </Button>
-          )}
+            ) : null /* user không có quyền, không hiện nút gì */
+          }
         </DialogFooter>
       </DialogContent>
     </Dialog>

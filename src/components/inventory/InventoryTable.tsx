@@ -10,10 +10,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Search, Eye, Trash2, Loader2, Plus } from "lucide-react";
+import { Search, Eye, Trash2, Loader2, Plus, Repeat } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CreateInventoryModal } from "./CreateInventoryModal";
 import { ViewInventoryModal } from "./ViewInventoryModal";
+import { InventoryTransferModal } from "./InventoryTransferModalProps ";
 import { Inventory } from "@/types/inventory";
 import { useInventory } from "@/hooks/useInventory";
 import { useAuth } from "@/context/AuthContext";
@@ -36,13 +37,15 @@ export function InventoryTable() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Inventory | null>(null);
 
-  const canModify = role === "DealerManager" || role === "Admin";
-  const canViewOnly = role === "DealerStaff";
+  // ✅ Chỉ EVMStaff mới được thao tác (Thêm, Chuyển kho, Xóa)
+  const canUseComponents = role === "EVMStaff";
 
   return (
     <div className="space-y-6 p-4">
+      {/* Header: Search + Buttons */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="relative w-full sm:w-1/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -54,23 +57,27 @@ export function InventoryTable() {
           />
         </div>
 
-        {canViewOnly && (
-          <p className="text-yellow-400 text-sm">
-            Bạn chỉ có quyền xem dữ liệu tồn kho.
-          </p>
-        )}
+        {/* Nút thao tác chỉ hiện nếu EVMStaff */}
+        {canUseComponents && (
+          <div className="flex gap-2">
+            <Button
+              className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              <Plus className="h-4 w-4" /> Thêm Tồn kho
+            </Button>
 
-        {/* ✅ Chỉ hiển thị nút thêm nếu được phép chỉnh sửa */}
-        {canModify && (
-          <Button
-            className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            <Plus className="h-4 w-4" /> Thêm Tồn kho
-          </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+              onClick={() => setTransferModalOpen(true)}
+            >
+              <Repeat className="h-4 w-4" /> Chuyển kho
+            </Button>
+          </div>
         )}
       </div>
 
+      {/* ===== Table ===== */}
       <div className="border border-gray-700 rounded-lg overflow-x-auto bg-gray-800">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-gray-400">
@@ -133,11 +140,11 @@ export function InventoryTable() {
                       {item.location || "Chưa cập nhật"}
                     </TableCell>
                     <TableCell className="text-right flex justify-end gap-2 w-[100px]">
-                      {/* ✅ Ai cũng xem được */}
+                      {/* Ai cũng xem được */}
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-sky-500 hover:bg-gray-700 hover:border-sky-500 bg-gray-600"
+                        className="border-gray-600 text-emerald-500 hover:bg-gray-700 hover:border-emerald-500 bg-gray-600"
                         onClick={() => {
                           setSelectedItem(item);
                           setViewModalOpen(true);
@@ -146,8 +153,8 @@ export function InventoryTable() {
                         <Eye className="h-4 w-4" />
                       </Button>
 
-                      {/* ❌ DealerStaff không được xóa */}
-                      {canModify && (
+                      {/* Chỉ EVMStaff mới được xóa */}
+                      {canUseComponents && (
                         <Button
                           variant="outline"
                           size="icon"
@@ -175,13 +182,21 @@ export function InventoryTable() {
         )}
       </div>
 
-      {/* ✅ DealerManager hoặc Admin mới được thêm */}
-      {canModify && (
-        <CreateInventoryModal
-          open={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          onSuccess={fetchInventory}
-        />
+      {/* Modals */}
+      {canUseComponents && (
+        <>
+          <CreateInventoryModal
+            open={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            onSuccess={fetchInventory}
+          />
+
+          <InventoryTransferModal
+            open={transferModalOpen}
+            onOpenChange={setTransferModalOpen}
+            onSuccess={fetchInventory}
+          />
+        </>
       )}
 
       {selectedItem && (
@@ -190,7 +205,7 @@ export function InventoryTable() {
           isOpen={viewModalOpen}
           onClose={() => setViewModalOpen(false)}
           onUpdated={fetchInventory}
-          canEdit={canModify} // DealerStaff chỉ xem
+          canEdit={canUseComponents}
         />
       )}
     </div>

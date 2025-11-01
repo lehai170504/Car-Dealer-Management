@@ -85,6 +85,9 @@ export function PromotionTable() {
                 <TableHead className="font-medium whitespace-nowrap">
                   Đến ngày
                 </TableHead>
+                <TableHead className="font-medium whitespace-nowrap">
+                  Trạng thái
+                </TableHead>
                 <TableHead className="text-right font-medium w-[100px]">
                   Hành động
                 </TableHead>
@@ -116,11 +119,24 @@ export function PromotionTable() {
                     <TableCell>
                       {new Date(promo.validTo).toLocaleDateString()}
                     </TableCell>
+                    <TableCell>
+                      <span
+                        className={`px-2 py-1 rounded-full text-sm font-medium ${
+                          promo.status === "active"
+                            ? "bg-green-200 text-emerald-800 hover:bg-emerald-300"
+                            : "bg-red-200 text-red-800 hover:bg-red-300"
+                        }`}
+                      >
+                        {promo.status === "active"
+                          ? "Đang hoạt động"
+                          : "Ngưng hoạt động"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right flex justify-end gap-2 w-[100px]">
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-green-400 hover:bg-gray-700 hover:border-green-500"
+                        className="border-gray-600 text-emerald-400 hover:bg-gray-700 hover:border-emerald-500 bg-gray-600"
                         onClick={() => {
                           setSelectedPromotion(promo);
                           setViewModalOpen(true);
@@ -128,11 +144,10 @@ export function PromotionTable() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-
                       <Button
                         variant="outline"
                         size="icon"
-                        className="border-gray-600 text-red-400 hover:bg-gray-700 hover:border-red-500"
+                        className="border-gray-600 text-red-400 hover:bg-gray-700 bg-gray-600 hover:border-red-500"
                         onClick={() => handleDelete(promo._id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -143,7 +158,7 @@ export function PromotionTable() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center text-gray-400 py-6"
                   >
                     Không có chương trình khuyến mãi nào

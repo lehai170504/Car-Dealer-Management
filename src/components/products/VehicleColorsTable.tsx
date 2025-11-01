@@ -12,35 +12,39 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Plus, Eye, Trash2, Search } from "lucide-react";
-import { Pagination } from "@/components/ui/pagination";
 import { useVehicleColors } from "@/hooks/useVehicleColors";
 import { CreateVehicleColorModal } from "./CreateVehicleColorModal";
 import { VehicleColorDetailModal } from "./VehicleColorDetailModal";
 
 export function VehicleColorsTable() {
   const hook = useVehicleColors();
+
   const [searchText, setSearchText] = useState(hook.search);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<any>(null);
 
+  /** 🔍 Debounce search */
   useEffect(() => {
-    hook.setSearch(searchText);
-  }, [searchText]);
+    const delay = setTimeout(() => hook.setSearch(searchText), 300);
+    return () => clearTimeout(delay);
+  }, [searchText, hook]);
 
+  /** 🧭 Hiển thị hành động */
   const renderActions = (item: any) => (
     <div className="flex gap-2 justify-end">
       <Button
         size="icon"
         variant="outline"
-        className="bg-gray-800 border-gray-600 hover:bg-gray-600"
+        className="bg-gray-800 border-gray-600 hover:bg-gray-700"
         onClick={() => {
           setSelectedColor(item);
           setDetailModalOpen(true);
         }}
       >
-        <Eye className="h-4 w-4 text-sky-400" />
+        <Eye className="h-4 w-4 text-emerald-400" />
       </Button>
+
       <Button
         size="icon"
         variant="outline"
@@ -52,18 +56,26 @@ export function VehicleColorsTable() {
     </div>
   );
 
+  /** 🔄 Loading state */
   if (hook.loading)
     return (
-      <div className="flex items-center justify-center py-12 text-sky-400/80">
+      <div className="flex items-center justify-center py-12 text-emerald-400/80">
         <Loader2 className="animate-spin mr-2" />
-        Đang tải...
+        Đang tải dữ liệu...
       </div>
     );
-  if (hook.error) return <div className="text-red-400 py-6">{hook.error}</div>;
+
+  /** ❌ Error state */
+  if (hook.error)
+    return (
+      <div className="text-red-400 text-center py-8">
+        {hook.error || "Đã xảy ra lỗi."}
+      </div>
+    );
 
   return (
     <div className="space-y-4">
-      {/* Header: Search + Create */}
+      {/* ==== Header: Search + Create ==== */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="relative w-full sm:w-1/3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -74,15 +86,16 @@ export function VehicleColorsTable() {
             className="pl-10 bg-gray-700 border-gray-600 text-gray-50 rounded-lg shadow-inner"
           />
         </div>
+
         <Button
-          className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
+          className="bg-emerald-600 hover:bg-sky-700 text-white flex items-center gap-2"
           onClick={() => setCreateModalOpen(true)}
         >
           <Plus className="h-4 w-4" /> Thêm Màu Mới
         </Button>
       </div>
 
-      {/* Table */}
+      {/* ==== Table ==== */}
       <div className="overflow-x-auto border border-gray-700 rounded-lg bg-gray-800">
         <Table>
           <TableHeader className="bg-gray-700/80">
@@ -96,6 +109,7 @@ export function VehicleColorsTable() {
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
             {hook.filteredVehicleColors.length > 0 ? (
               hook.filteredVehicleColors.map((c, idx) => (
@@ -127,15 +141,16 @@ export function VehicleColorsTable() {
                     {c.extraPrice.toLocaleString("vi-VN")}₫
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
+                    <button
+                      onClick={() => hook.handleToggleStatus(c._id, !c.active)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
                         c.active
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
+                          ? "bg-green-200 text-green-800 hover:bg-green-300"
+                          : "bg-red-200 text-red-800 hover:bg-red-300"
                       }`}
                     >
-                      {c.active ? "Đang hoạt động" : "Không hoạt động"}
-                    </span>
+                      {c.active ? "Đang hoạt động" : "Ngừng hoạt động"}
+                    </button>
                   </TableCell>
                   <TableCell className="text-right">
                     {renderActions(c)}
@@ -148,7 +163,7 @@ export function VehicleColorsTable() {
                   colSpan={7}
                   className="text-center text-gray-400 py-6"
                 >
-                  Không có dữ liệu
+                  Không có dữ liệu phù hợp
                 </TableCell>
               </TableRow>
             )}
@@ -156,19 +171,7 @@ export function VehicleColorsTable() {
         </Table>
       </div>
 
-      {/* Pagination */}
-      {hook.total > hook.limit && (
-        <div className="flex justify-center pt-4">
-          <Pagination
-            currentPage={hook.page}
-            totalCount={hook.total}
-            pageSize={hook.limit}
-            onPageChange={hook.setPage}
-          />
-        </div>
-      )}
-
-      {/* Modals */}
+      {/* ==== Modals ==== */}
       <CreateVehicleColorModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}

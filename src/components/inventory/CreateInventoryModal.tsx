@@ -52,6 +52,9 @@ export function CreateInventoryModal({
     loading,
     handleSubmit,
     resetForm,
+    vehicleOptions,
+    colorOptions,
+    dealerOptions,
   } = useCreateInventory();
 
   const handleClose = () => {
@@ -59,27 +62,28 @@ export function CreateInventoryModal({
     onClose();
   };
 
-  const handleFormSubmit = () => {
-    handleSubmit(onSuccess, handleClose);
-  };
+  // Bây giờ handleFormSubmit chỉ gọi hook
+  const handleFormSubmit = () => handleSubmit(onSuccess, handleClose);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-xl bg-gray-800 text-sky-50 border-gray-700">
         <DialogHeader className="border-b border-gray-700 pb-4">
-          <DialogTitle className="text-xl text-sky-500">
+          <DialogTitle className="text-xl text-emerald-500">
             Thêm Bản ghi Tồn kho Mới
           </DialogTitle>
         </DialogHeader>
+
         <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+          {/* Chủ sở hữu */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="ownerType" className="text-right">
               Chủ sở hữu
             </Label>
             <Select
               value={ownerType}
-              onValueChange={(value: "Dealer" | "Warehouse") =>
-                setOwnerType(value)
+              onValueChange={(value) =>
+                setOwnerType(value as "Dealer" | "Warehouse")
               }
             >
               <SelectTrigger className="col-span-3 bg-gray-700 border-gray-600">
@@ -92,51 +96,69 @@ export function CreateInventoryModal({
             </Select>
           </div>
 
+          {/* Owner */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="ownerId" className="text-right">
-              ID Chủ sở hữu
+              Chọn {ownerType}
             </Label>
-            <Input
-              id="ownerId"
-              value={ownerId}
-              onChange={(e) => setOwnerId(e.target.value)}
-              className="col-span-3 bg-gray-700 border-gray-600"
-              placeholder="e.g., 68f90ebebeaef72ecf6e004d"
-            />
+            <Select value={ownerId} onValueChange={setOwnerId}>
+              <SelectTrigger className="col-span-3 bg-gray-700 border-gray-600">
+                <SelectValue placeholder={`Chọn ${ownerType}`} />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-700 text-gray-50">
+                {(ownerType === "Dealer" ? dealerOptions : []).map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* Loại xe */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="variantId" className="text-right">
-              ID Biến thể
+              Loại xe
             </Label>
-            <Input
-              id="variantId"
-              value={variantId}
-              onChange={(e) => setVariantId(e.target.value)}
-              className="col-span-3 bg-gray-700 border-gray-600"
-              placeholder="e.g., 68f90ebebeaef72ecf6e0066"
-            />
+            <Select value={variantId} onValueChange={setVariantId}>
+              <SelectTrigger className="col-span-3 bg-gray-700 border-gray-600">
+                <SelectValue placeholder="Chọn xe" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-700 text-gray-50">
+                {vehicleOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* Màu */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="colorId" className="text-right">
-              ID Màu
+              Màu
             </Label>
-            <Input
-              id="colorId"
-              value={colorId}
-              onChange={(e) => setColorId(e.target.value)}
-              className="col-span-3 bg-gray-700 border-gray-600"
-              placeholder="e.g., 68f90ebebeaef72ecf6e0063"
-            />
+            <Select value={colorId} onValueChange={setColorId}>
+              <SelectTrigger className="col-span-3 bg-gray-700 border-gray-600">
+                <SelectValue placeholder="Chọn màu" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-700 text-gray-50">
+                {colorOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* Số lượng & Dự trữ */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="quantity" className="text-right">
               Số lượng
             </Label>
             <Input
-              id="quantity"
               type="number"
               value={quantity.toString()}
               onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
@@ -146,7 +168,6 @@ export function CreateInventoryModal({
               Dự trữ
             </Label>
             <Input
-              id="reserved"
               type="number"
               value={reserved.toString()}
               onChange={(e) => setReserved(parseInt(e.target.value) || 0)}
@@ -154,12 +175,12 @@ export function CreateInventoryModal({
             />
           </div>
 
+          {/* Vị trí */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">
               Vị trí
             </Label>
             <Input
-              id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               className="col-span-3 bg-gray-700 border-gray-600"
@@ -167,12 +188,12 @@ export function CreateInventoryModal({
             />
           </div>
 
+          {/* VIN List */}
           <div className="grid grid-cols-4 gap-4">
             <Label htmlFor="vinList" className="text-right mt-2">
-              Danh sách VIN (cách nhau bởi dấu phẩy)
+              Danh sách VIN
             </Label>
             <Textarea
-              id="vinList"
               value={vinListInput}
               onChange={(e) => setVinListInput(e.target.value)}
               className="col-span-3 bg-gray-700 border-gray-600 min-h-[80px]"
@@ -180,6 +201,7 @@ export function CreateInventoryModal({
             />
           </div>
         </div>
+
         <DialogFooter className="border-t border-gray-700 pt-4">
           <Button
             variant="outline"
@@ -192,7 +214,7 @@ export function CreateInventoryModal({
           <Button
             onClick={handleFormSubmit}
             disabled={loading}
-            className="bg-sky-600 hover:bg-sky-700"
+            className="bg-emerald-600 hover:bg-emerald-700"
           >
             {loading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

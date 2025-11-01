@@ -9,9 +9,9 @@ import { UserProfile } from "@/types/auth";
 
 function getPageTitle(pathname: string): string {
   if (pathname.includes("products")) return "Quản lý sản phẩm & phân phối";
-  if (pathname.includes("finance")) return "Báo cáo tài chính";
-  if (pathname.includes("dealers")) return "Quản lý đại lý";
-  if (pathname.includes("inventory")) return "Quản lý hàng tồn kho";
+  if (pathname.includes("reports")) return "Báo cáo tài chính";
+  if (pathname.includes("dealer")) return "Quản lý đại lý";
+  if (pathname.includes("catalog")) return "Quản lý xe và tồn kho";
   if (pathname.includes("profile")) return "Hồ sơ EVM";
   if (pathname.includes("dashboard")) return "Bảng điều khiển EVM";
   return "EVM Portal - Quản trị hệ thống";

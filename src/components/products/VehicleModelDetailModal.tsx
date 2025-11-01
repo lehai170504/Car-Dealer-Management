@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useFormik } from "formik";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,14 +20,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { VehicleModel } from "@/types/vehicleModels";
-import { useUpdateVehicleModel } from "@/hooks/useUpdateVehicleModel";
+import { VehicleModel } from "@/types/vehicleModels";
+import { useVehicleModels } from "@/hooks/useVehicleModels";
+import { UpdateVehicleModelRequest } from "@/types/vehicleModels";
+import { vehicleModelSchema } from "@/validations/vehicleModelSchema";
 
 interface VehicleModelDetailModalProps {
   model: VehicleModel | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdated: () => void;
+  onUpdated?: () => void;
 }
 
 export function VehicleModelDetailModal({
@@ -34,113 +38,138 @@ export function VehicleModelDetailModal({
   onOpenChange,
   onUpdated,
 }: VehicleModelDetailModalProps) {
-  if (!model) return null;
+  const { handleUpdate, loading } = useVehicleModels();
 
-  const updateHook = useUpdateVehicleModel(model);
+  const formik = useFormik<UpdateVehicleModelRequest>({
+    initialValues: {
+      name: "",
+      brand: "",
+      segment: "",
+      description: "",
+      active: true,
+    },
+    validationSchema: vehicleModelSchema,
+    enableReinitialize: true,
+    onSubmit: async (values) => {
+      if (!model) return;
+      await handleUpdate(model._id, values);
+      onUpdated?.();
+      onOpenChange(false); // đóng modal sau khi lưu
+    },
+  });
 
+  /** 🔁 Đồng bộ khi mở modal */
+  useEffect(() => {
+    if (model) {
+      formik.setValues({
+        name: model.name,
+        brand: model.brand,
+        segment: model.segment,
+        description: model.description || "",
+        active: model.active,
+      });
+    }
+  }, [model]);
+
+  const inputClass =
+    "bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-emerald-500";
   const labelClass = "block text-gray-300 font-medium mb-1";
+  const errorClass = "text-red-400 text-sm mt-1";
 
-  const handleSave = async () => {
-    await updateHook.handleUpdate(onUpdated, () => onOpenChange(false));
-  };
+  if (!model) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-gray-900 text-gray-100 max-w-lg w-full rounded-xl shadow-lg">
         <DialogHeader className="border-b border-gray-700 pb-2">
           <DialogTitle className="text-xl font-semibold">
-            Chi tiết Vehicle Model
+            Chỉnh sửa Vehicle Model
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
-          {/* Name */}
-          <div className="space-y-1">
+        <form onSubmit={formik.handleSubmit} className="space-y-4 mt-4">
+          {/* 🧩 Name */}
+          <div>
             <label className={labelClass}>Tên Model</label>
-            <Input
-              value={updateHook.formData.name}
-              onChange={(e) => updateHook.handleChange("name", e.target.value)}
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
+            <Input {...formik.getFieldProps("name")} className={inputClass} />
+            {formik.touched.name && formik.errors.name && (
+              <p className={errorClass}>{formik.errors.name}</p>
+            )}
           </div>
 
-          {/* Brand */}
-          <div className="space-y-1">
+          {/* 🏷 Brand */}
+          <div>
             <label className={labelClass}>Thương hiệu</label>
-            <Input
-              value={updateHook.formData.brand}
-              onChange={(e) => updateHook.handleChange("brand", e.target.value)}
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
+            <Input {...formik.getFieldProps("brand")} className={inputClass} />
+            {formik.touched.brand && formik.errors.brand && (
+              <p className={errorClass}>{formik.errors.brand}</p>
+            )}
           </div>
 
-          {/* Segment */}
-          <div className="space-y-1">
+          {/* 📊 Segment */}
+          <div>
             <label className={labelClass}>Phân khúc</label>
             <Input
-              value={updateHook.formData.segment}
-              onChange={(e) =>
-                updateHook.handleChange("segment", e.target.value)
-              }
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
+              {...formik.getFieldProps("segment")}
+              className={inputClass}
             />
+            {formik.touched.segment && formik.errors.segment && (
+              <p className={errorClass}>{formik.errors.segment}</p>
+            )}
           </div>
 
-          {/* Description */}
-          <div className="space-y-1">
+          {/* 📝 Description */}
+          <div>
             <label className={labelClass}>Mô tả</label>
             <Textarea
-              value={updateHook.formData.description}
-              onChange={(e) =>
-                updateHook.handleChange("description", e.target.value)
-              }
+              {...formik.getFieldProps("description")}
               placeholder="Nhập mô tả (tùy chọn)"
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
+              className={inputClass}
             />
+            {formik.touched.description && formik.errors.description && (
+              <p className={errorClass}>{formik.errors.description}</p>
+            )}
           </div>
 
-          {/* Active */}
-          <div className="space-y-1">
+          {/* 🟢 Active */}
+          <div>
             <label className={labelClass}>Trạng thái</label>
             <Select
-              value={updateHook.formData.active ? "active" : "inactive"}
+              value={formik.values.active ? "active" : "inactive"}
               onValueChange={(val) =>
-                updateHook.handleChange("active", val === "active")
+                formik.setFieldValue("active", val === "active")
               }
             >
-              <SelectTrigger className="w-full bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm hover:border-gray-500">
+              <SelectTrigger className={`${inputClass} mt-1`}>
                 <SelectValue placeholder="Chọn trạng thái" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 text-gray-100">
+              <SelectContent>
                 <SelectItem value="active">Đang hoạt động</SelectItem>
                 <SelectItem value="inactive">Không hoạt động</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        <DialogFooter className="mt-6 flex justify-end space-x-3 border-t border-gray-700 pt-3">
-          <Button
-            variant="outline"
-            onClick={() => {
-              updateHook.cancelEdit();
-              onOpenChange(false);
-            }}
-            className="hover:bg-gray-700 text-neutral-700"
-          >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={updateHook.loading}
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
-            {updateHook.loading && (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            )}
-            Lưu
-          </Button>
-        </DialogFooter>
+          {/* 🔘 Footer */}
+          <DialogFooter className="mt-6 flex justify-end gap-2 border-t border-gray-700 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="hover:bg-gray-700 text-gray-500 border-gray-600"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading || !formik.dirty}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Lưu thay đổi
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

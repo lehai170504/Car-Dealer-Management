@@ -1,136 +1,176 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import Swal from "sweetalert2";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { toast } from "sonner";
 import { vehicleColorService } from "@/services/vehicleColors/vehicleColorService";
-import { VehicleColor, VehicleColorListResponse } from "@/types/vehicleColors";
+import {
+  VehicleColor,
+  CreateVehicleColorRequest,
+  UpdateVehicleColorRequest,
+} from "@/types/vehicleColors";
 
+/** 🧩 Kết quả trả về của hook */
 interface UseVehicleColorsResult {
   vehicleColors: VehicleColor[];
   filteredVehicleColors: VehicleColor[];
   selectedColor: VehicleColor | null;
   loading: boolean;
   error: string | null;
+
   search: string;
   setSearch: (s: string) => void;
 
-  page: number;
-  setPage: (p: number) => void;
-  limit: number;
-  total: number;
-
-  fetchVehicleColors: (page?: number) => Promise<void>;
+  fetchVehicleColors: () => Promise<void>;
   fetchVehicleColorById: (id: string) => Promise<void>;
+  handleCreate: (payload: CreateVehicleColorRequest) => Promise<void>;
+  handleUpdate: (
+    id: string,
+    payload: UpdateVehicleColorRequest
+  ) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
+  handleToggleStatus: (id: string, active: boolean) => Promise<void>;
 }
 
-/** 🧩 Hook quản lý danh sách và chi tiết Vehicle Colors */
 export const useVehicleColors = (): UseVehicleColorsResult => {
   const [vehicleColors, setVehicleColors] = useState<VehicleColor[]>([]);
   const [selectedColor, setSelectedColor] = useState<VehicleColor | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const isFetching = useRef(false);
 
-  // Pagination
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
+  /** 🔵 Lấy toàn bộ danh sách Vehicle Colors */
+  const fetchVehicleColors = useCallback(async () => {
+    if (isFetching.current) return;
+    isFetching.current = true;
+    setLoading(true);
 
-  /** 🔵 Lấy danh sách Vehicle Colors (phân trang) */
-  const fetchVehicleColors = useCallback(
-    async (pageNumber: number = page) => {
-      try {
-        setLoading(true);
-
-        const res: VehicleColorListResponse =
-          await vehicleColorService.getAllVehicleColors({
-            page: pageNumber,
-            limit,
-          });
-
-        setVehicleColors(res.items ?? []);
-        setTotal(res.total ?? 0);
-
-        if (typeof res.page === "number") setPage(res.page);
-        if (typeof res.limit === "number") setLimit(res.limit);
-
-        setError(null);
-      } catch (err: any) {
-        console.error("❌ Lỗi khi tải danh sách vehicle colors:", err);
-        setError(err?.message || "Không thể tải danh sách vehicle colors.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [page, limit]
-  );
+    try {
+      const data = await vehicleColorService.getAllVehicleColors();
+      setVehicleColors(data);
+      setError(null);
+    } catch (err: any) {
+      console.error("❌ Lỗi khi tải danh sách vehicle colors:", err);
+      setError(err?.message || "Không thể tải danh sách vehicle colors.");
+      toast.error("Không thể tải danh sách vehicle colors.");
+    } finally {
+      setLoading(false);
+      isFetching.current = false;
+    }
+  }, []);
 
   /** 🟢 Lấy chi tiết Vehicle Color theo ID */
   const fetchVehicleColorById = useCallback(async (id: string) => {
+    setLoading(true);
     try {
-      setLoading(true);
       const data = await vehicleColorService.getVehicleColorById(id);
       setSelectedColor(data);
       setError(null);
     } catch (err: any) {
       console.error(`❌ Lỗi khi lấy vehicle color ID ${id}:`, err);
       setError(err?.message || "Không thể tải thông tin vehicle color.");
+      toast.error("Không thể tải thông tin vehicle color.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  /** 🔴 Xóa Vehicle Color */
-  const handleDelete = useCallback(
-    async (id: string) => {
-      const confirm = await Swal.fire({
-        title: "Xóa Vehicle Color?",
-        text: "Hành động này không thể hoàn tác!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Xóa",
-        cancelButtonText: "Hủy",
-        confirmButtonColor: "#dc2626",
-      });
-
-      if (!confirm.isConfirmed) return;
-
+  /** 🟢 Tạo Vehicle Color mới */
+  const handleCreate = useCallback(
+    async (payload: CreateVehicleColorRequest) => {
+      setLoading(true);
+      const toastId = toast.loading("Đang tạo màu xe...");
       try {
-        setLoading(true);
-        await vehicleColorService.deleteVehicleColor(id);
-        Swal.fire("Đã xóa!", "Vehicle Color đã bị xóa thành công.", "success");
-        await fetchVehicleColors(page);
+        await vehicleColorService.createVehicleColor(payload);
+        toast.success("Đã tạo màu xe mới!", { id: toastId });
+        await fetchVehicleColors();
       } catch (err: any) {
-        console.error("❌ Lỗi khi xóa vehicle color:", err);
-        Swal.fire(
-          "Lỗi",
-          err?.message || "Không thể xóa vehicle color",
-          "error"
-        );
+        console.error("❌ Lỗi khi tạo màu xe:", err);
+        toast.error(err?.message || "Không thể tạo màu xe mới.", {
+          id: toastId,
+        });
       } finally {
         setLoading(false);
       }
     },
-    [fetchVehicleColors, page]
+    [fetchVehicleColors]
   );
 
-  /** 🧮 Lọc danh sách client-side */
+  /** 🟡 Cập nhật Vehicle Color */
+  const handleUpdate = useCallback(
+    async (id: string, payload: UpdateVehicleColorRequest) => {
+      setLoading(true);
+      const toastId = toast.loading("Đang cập nhật màu xe...");
+      try {
+        await vehicleColorService.updateVehicleColor(id, payload);
+        toast.success("Đã cập nhật màu xe!", { id: toastId });
+        await fetchVehicleColors();
+      } catch (err: any) {
+        console.error(`❌ Lỗi khi cập nhật màu xe ID ${id}:`, err);
+        toast.error(err?.message || "Không thể cập nhật màu xe.", {
+          id: toastId,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchVehicleColors]
+  );
+
+  /** 🔴 Xóa Vehicle Color */
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const toastId = toast.loading("Đang xóa màu xe...");
+      setLoading(true);
+      try {
+        await vehicleColorService.deleteVehicleColor(id);
+        toast.success("Màu xe đã bị xóa.", { id: toastId });
+        await fetchVehicleColors();
+      } catch (err: any) {
+        console.error("❌ Lỗi khi xóa màu xe:", err);
+        toast.error(err?.message || "Không thể xóa màu xe.", { id: toastId });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchVehicleColors]
+  );
+
+  /** 🟣 Chuyển trạng thái Active / Inactive */
+  const handleToggleStatus = useCallback(
+    async (id: string, active: boolean) => {
+      const toastId = toast.loading(
+        `Đang ${active ? "kích hoạt" : "ngưng hoạt động"} màu xe...`
+      );
+      try {
+        await handleUpdate(id, { active });
+        toast.success(
+          `Màu xe đã được ${active ? "kích hoạt" : "ngưng hoạt động"}.`,
+          { id: toastId }
+        );
+      } catch (err: any) {
+        console.error("❌ Lỗi khi đổi trạng thái màu xe:", err);
+        toast.error("Không thể đổi trạng thái màu xe.", { id: toastId });
+      }
+    },
+    [handleUpdate]
+  );
+
+  /** 🔍 Lọc danh sách client-side */
   const filteredVehicleColors = useMemo(() => {
-    if (!search) return vehicleColors;
-    const lower = search.toLowerCase();
-    return vehicleColors.filter(
-      (c) =>
-        c.name.toLowerCase().includes(lower) ||
-        c.code.toLowerCase().includes(lower) ||
-        c.hex.toLowerCase().includes(lower)
+    const q = search.trim().toLowerCase();
+    if (!q) return vehicleColors;
+    return vehicleColors.filter((c) =>
+      [c.name, c.code, c.hex]
+        .filter(Boolean)
+        .some((f) => f!.toLowerCase().includes(q))
     );
   }, [vehicleColors, search]);
 
-  /** 🪄 Gọi lần đầu */
+  /** 🪄 Gọi danh sách khi mount */
   useEffect(() => {
-    fetchVehicleColors(page);
-  }, [fetchVehicleColors, page]);
+    fetchVehicleColors();
+  }, [fetchVehicleColors]);
 
   return {
     vehicleColors,
@@ -140,12 +180,11 @@ export const useVehicleColors = (): UseVehicleColorsResult => {
     error,
     search,
     setSearch,
-    page,
-    setPage,
-    limit,
-    total,
     fetchVehicleColors,
     fetchVehicleColorById,
+    handleCreate,
+    handleUpdate,
     handleDelete,
+    handleToggleStatus,
   };
 };

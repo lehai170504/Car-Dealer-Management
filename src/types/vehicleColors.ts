@@ -14,12 +14,7 @@ export interface VehicleColor {
 }
 
 /** Response khi lấy danh sách Vehicle Colors */
-export interface VehicleColorListResponse {
-  items: VehicleColor[];
-  total: number;
-  page: number;
-  limit: number;
-}
+export type VehicleColorListResponse = VehicleColor[];
 
 /** Response cho 1 Vehicle Color */
 export interface VehicleColorResponse extends VehicleColor {}

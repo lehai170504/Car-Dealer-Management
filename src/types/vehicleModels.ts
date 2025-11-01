@@ -14,12 +14,7 @@ export interface VehicleModel {
 }
 
 /** Response khi lấy danh sách Vehicle Models */
-export interface VehicleModelListResponse {
-  items: VehicleModel[];
-  total: number;
-  page: number;
-  limit: number;
-}
+export type VehicleModelListResponse = VehicleModel[];
 
 /** Response cho 1 Vehicle Model */
 export interface VehicleModelResponse extends VehicleModel {}

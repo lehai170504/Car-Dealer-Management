@@ -1,30 +1,25 @@
 import axiosInstance from "@/utils/axiosInstance";
-import { Dealer, DealerCredentials } from "@/types/dealer";
+import {
+  Dealer,
+  DealerResponse,
+  CreateDealerRequest,
+  UpdateDealerRequest,
+  DealerInventory,
+  DealerListInventory,
+  TargetDealerRequest,
+  TargerDealerResponse,
+} from "@/types/dealer";
 
 const endpoint = "/dealers";
 
 export const dealerService = {
-  /** Get all dealers */
-  getAllDealers: async (params?: {
-    page?: number;
-    limit?: number;
-  }): Promise<{
-    items: Dealer[];
-    total: number;
-    page: number;
-    limit: number;
-  }> => {
+  /** Get all dealers (no pagination, return raw data) */
+  getAllDealers: async (): Promise<Dealer[]> => {
     try {
-      const res = await axiosInstance.get(endpoint, { params });
-
-      const data = res.data || {};
-
-      return {
-        items: data.items || [],
-        total: data.total ?? 0,
-        page: data.page ?? params?.page ?? 1,
-        limit: data.limit ?? params?.limit ?? 10,
-      };
+      const res = await axiosInstance.get<{ success: boolean; data: Dealer[] }>(
+        endpoint
+      );
+      return res.data.data || [];
     } catch (error: any) {
       console.error("❌ Error fetching dealers:", error);
       throw new Error(
@@ -34,9 +29,9 @@ export const dealerService = {
   },
 
   /** Get dealer by ID */
-  getDealerById: async (id: string): Promise<Dealer> => {
+  getDealerById: async (id: string): Promise<DealerResponse> => {
     try {
-      const res = await axiosInstance.get(`${endpoint}/${id}`);
+      const res = await axiosInstance.get<DealerResponse>(`${endpoint}/${id}`);
       return res.data;
     } catch (error: any) {
       console.error(`❌ Error fetching dealer ID ${id}:`, error);
@@ -47,9 +42,11 @@ export const dealerService = {
   },
 
   /** Create new dealer */
-  createDealer: async (payload: DealerCredentials): Promise<Dealer> => {
+  createDealer: async (
+    payload: CreateDealerRequest
+  ): Promise<DealerResponse> => {
     try {
-      const res = await axiosInstance.post(endpoint, payload);
+      const res = await axiosInstance.post<DealerResponse>(endpoint, payload);
       return res.data;
     } catch (error: any) {
       console.error("❌ Error creating dealer:", error);
@@ -62,10 +59,13 @@ export const dealerService = {
   /** Update dealer */
   updateDealer: async (
     id: string,
-    payload: Partial<DealerCredentials>
-  ): Promise<Dealer> => {
+    payload: UpdateDealerRequest
+  ): Promise<DealerResponse> => {
     try {
-      const res = await axiosInstance.patch(`${endpoint}/${id}`, payload);
+      const res = await axiosInstance.patch<DealerResponse>(
+        `${endpoint}/${id}`,
+        payload
+      );
       return res.data;
     } catch (error: any) {
       console.error(`❌ Error updating dealer ID ${id}:`, error);
@@ -78,12 +78,48 @@ export const dealerService = {
   /** Delete dealer */
   deleteDealer: async (id: string): Promise<{ success: boolean }> => {
     try {
-      const res = await axiosInstance.delete(`${endpoint}/${id}`);
+      const res = await axiosInstance.delete<{ success: boolean }>(
+        `${endpoint}/${id}`
+      );
       return res.data;
     } catch (error: any) {
       console.error(`❌ Error deleting dealer ID ${id}:`, error);
       throw new Error(
         error.response?.data?.message || "Failed to delete dealer"
+      );
+    }
+  },
+
+  /** Get dealer inventory */
+  getDealerInventory: async (id: string): Promise<DealerInventory[]> => {
+    try {
+      const res = await axiosInstance.get<DealerListInventory>(
+        `${endpoint}/${id}/inventory`
+      );
+      return res.data.data || [];
+    } catch (error: any) {
+      console.error(`❌ Error fetching inventory for dealer ID ${id}:`, error);
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch dealer inventory"
+      );
+    }
+  },
+
+  /** Update dealer sales target */
+  updateDealerTarget: async (
+    id: string,
+    payload: TargetDealerRequest
+  ): Promise<TargerDealerResponse> => {
+    try {
+      const res = await axiosInstance.put<TargerDealerResponse>(
+        `${endpoint}/${id}/target`,
+        payload
+      );
+      return res.data;
+    } catch (error: any) {
+      console.error(`❌ Error updating target for dealer ID ${id}:`, error);
+      throw new Error(
+        error.response?.data?.message || "Failed to update dealer target"
       );
     }
   },

@@ -1,7 +1,5 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,139 +7,228 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { Quote, QuoteStatus } from "@/types/quotes";
-import { useUpdateQuote } from "@/hooks/useUpdateQuote";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Quote } from "@/types/quotes";
+import { format } from "date-fns";
+import { Loader2, Pencil } from "lucide-react";
 
 interface QuoteDetailModalProps {
   quote: Quote | null;
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUpdated: () => void; // callback để refresh danh sách sau khi cập nhật
+  onClose: () => void;
+  onEdit: (quote: Quote) => void;
+  loading?: boolean;
 }
 
-export function QuoteDetailModal({
+export default function QuoteDetailModal({
   quote,
   open,
-  onOpenChange,
-  onUpdated,
+  onClose,
+  onEdit,
+  loading,
 }: QuoteDetailModalProps) {
-  const updateHook = useUpdateQuote(quote, { onUpdated });
+  const labelClass = "text-gray-400 text-sm font-medium";
 
   if (!quote) return null;
 
-  const labelClass = "block text-gray-300 font-medium mb-1";
-
-  const handleSave = async () => {
-    await updateHook.handleUpdate(() => onOpenChange(false));
-  };
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-gray-900 text-gray-100 max-w-2xl w-full rounded-xl shadow-lg">
-        <DialogHeader className="border-b border-gray-700 pb-2">
-          <DialogTitle className="text-xl font-semibold">
-            Chi tiết Quote
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-gray-900 text-gray-100 max-w-4xl w-full rounded-xl shadow-lg overflow-hidden">
+        {/* HEADER */}
+        <DialogHeader className="border-b border-gray-700 pb-3">
+          <DialogTitle className="text-xl font-semibold flex justify-between items-center">
+            <span>Chi tiết báo giá #{quote._id}</span>
+            <Button
+              onClick={() => onEdit(quote)}
+              size="sm"
+              variant="outline"
+              className="border-gray-600 text-gray-200 hover:bg-gray-800 hover:text-white"
+            >
+              <Pencil className="w-4 h-4 mr-2" /> Chỉnh sửa
+            </Button>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
-          {/* Khách hàng */}
-          <div className="flex justify-between">
-            <span className="text-gray-300 font-medium">Khách hàng:</span>
-            <span className="font-semibold text-gray-50">
-              {updateHook.formData.customer}
-            </span>
-          </div>
+        {/* BODY */}
+        <ScrollArea className="max-h-[75vh] mt-4 pr-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-1 pb-6">
+            {/* ===== CỘT TRÁI ===== */}
+            <div className="space-y-6">
+              {/* Khách hàng */}
+              <div>
+                <label className={labelClass}>Khách hàng</label>
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+                  <div className="font-medium text-gray-100">
+                    {quote.customer || "—"}
+                  </div>
+                </div>
+              </div>
 
-          {/* Trạng thái */}
-          <div className="space-y-1">
-            <label className={labelClass}>Trạng thái</label>
-            <Select
-              value={updateHook.formData.status}
-              onValueChange={(value) =>
-                updateHook.handleChange("status", value as QuoteStatus)
-              }
-            >
-              <SelectTrigger className="w-full bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm hover:border-gray-500">
-                <SelectValue placeholder="Chọn trạng thái" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 text-gray-100">
-                <SelectItem value="draft">Bản nháp</SelectItem>
-                <SelectItem value="sent">Đã gửi</SelectItem>
-                <SelectItem value="completed">Đã chuyển đổi</SelectItem>
-                <SelectItem value="cancelled">Đã hủy</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              {/* Đại lý */}
+              <div>
+                <label className={labelClass}>Đại lý</label>
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+                  <div className="font-medium text-gray-100">
+                    {quote.dealer || "—"}
+                  </div>
+                </div>
+              </div>
 
-          {/* Tổng giá */}
-          <div className="space-y-1">
-            <label className={labelClass}>Tổng giá</label>
-            <Input
-              type="number"
-              value={updateHook.formData.total || 0}
-              onChange={(e) =>
-                updateHook.handleChange("total", Number(e.target.value))
-              }
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
+              {/* Danh sách xe */}
+              <div>
+                <label className={labelClass}>Danh sách xe</label>
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 space-y-3">
+                  {quote.items?.length ? (
+                    quote.items.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="border-b border-gray-700 pb-2 last:border-none"
+                      >
+                        <div className="flex justify-between text-sm font-medium">
+                          <span>
+                            🚗 Biến thể:{" "}
+                            <span className="text-sky-400">
+                              {item.variant || "Không rõ"}
+                            </span>{" "}
+                            – Màu:{" "}
+                            <span className="text-sky-400">
+                              {item.color || "Không rõ"}
+                            </span>
+                          </span>
+                          <span>SL: {item.qty}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-gray-400">
+                          <span>
+                            Đơn giá: {item.unitPrice.toLocaleString()} đ
+                          </span>
+                          <span>
+                            Thành tiền:{" "}
+                            {(item.qty * item.unitPrice).toLocaleString()} đ
+                          </span>
+                        </div>
 
-          {/* Ghi chú */}
-          <div className="space-y-1">
-            <label className={labelClass}>Ghi chú</label>
-            <Input
-              value={updateHook.formData.notes || ""}
-              onChange={(e) => updateHook.handleChange("notes", e.target.value)}
-              placeholder="Nhập ghi chú..."
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
+                        {item.promotionApplied?.length ? (
+                          <div className="text-xs text-green-400 mt-1">
+                            Ưu đãi: {item.promotionApplied.join(", ")}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-400 italic">Không có xe nào</div>
+                  )}
+                </div>
+              </div>
+            </div>
 
-          {/* Ngày hết hạn */}
-          <div className="space-y-1">
-            <label className={labelClass}>Ngày hết hạn</label>
-            <Input
-              type="date"
-              value={updateHook.formData.validUntil?.slice(0, 10) || ""}
-              onChange={(e) =>
-                updateHook.handleChange("validUntil", e.target.value)
-              }
-              className="bg-gray-800 text-gray-100 border border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-sky-500"
-            />
-          </div>
-        </div>
+            {/* ===== CỘT PHẢI ===== */}
+            <div className="space-y-6">
+              {/* Phí */}
+              <div>
+                <label className={labelClass}>Phí</label>
+                {quote.fees ? (
+                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Đăng ký:</span>
+                      <span>{quote.fees.registration.toLocaleString()} đ</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Biển số:</span>
+                      <span>{quote.fees.plate.toLocaleString()} đ</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Giao xe:</span>
+                      <span>{quote.fees.delivery.toLocaleString()} đ</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-400 italic">Không có phí</div>
+                )}
+              </div>
 
-        <DialogFooter className="mt-6 flex justify-end space-x-3 border-t border-gray-700 pt-3">
+              {/* Tổng phụ */}
+              <div>
+                <label className={labelClass}>Tổng phụ</label>
+                <div className="bg-gray-800 px-3 py-2 rounded-md border border-gray-700 text-gray-300">
+                  {quote.subtotal?.toLocaleString()} đ
+                </div>
+              </div>
+
+              {/* Giảm giá */}
+              <div>
+                <label className={labelClass}>Giảm giá</label>
+                <div className="bg-gray-800 px-3 py-2 rounded-md border border-gray-700 text-gray-300">
+                  {quote.discount
+                    ? `${quote.discount.toLocaleString()} đ`
+                    : "—"}
+                </div>
+              </div>
+
+              {/* Tổng cộng */}
+              <div>
+                <label className={labelClass}>Tổng cộng</label>
+                <div className="bg-gray-800 px-3 py-2 rounded-md border border-gray-700 text-lg font-semibold text-sky-400">
+                  {quote.total?.toLocaleString()} đ
+                </div>
+              </div>
+
+              {/* Ngày hết hạn */}
+              <div>
+                <label className={labelClass}>Ngày hết hạn</label>
+                <div className="bg-gray-800 px-3 py-2 rounded-md border border-gray-700 text-gray-300">
+                  {quote.validUntil
+                    ? format(new Date(quote.validUntil), "dd/MM/yyyy")
+                    : "—"}
+                </div>
+              </div>
+
+              {/* Trạng thái */}
+              <div>
+                <label className={labelClass}>Trạng thái</label>
+                <div
+                  className={`bg-gray-800 px-3 py-2 rounded-md border border-gray-700 capitalize font-medium ${
+                    quote.status === "completed"
+                      ? "text-green-400"
+                      : quote.status === "cancelled"
+                      ? "text-red-400"
+                      : quote.status === "sent"
+                      ? "text-yellow-400"
+                      : "text-gray-300"
+                  }`}
+                >
+                  {quote.status}
+                </div>
+              </div>
+
+              {/* Ghi chú */}
+              <div>
+                <label className={labelClass}>Ghi chú</label>
+                <div className="bg-gray-800 px-3 py-2 rounded-md border border-gray-700">
+                  {quote.notes || "—"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+
+        {/* FOOTER */}
+        <DialogFooter className="border-t border-gray-700 pt-4">
           <Button
-            variant="outline"
-            onClick={() => {
-              updateHook.cancelEdit();
-              onOpenChange(false);
-            }}
-            className="hover:bg-gray-700 text-neutral-700"
+            onClick={onClose}
+            variant="secondary"
+            className="w-full sm:w-auto"
           >
-            Hủy
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={updateHook.loading}
-            className="bg-sky-600 hover:bg-sky-700"
-          >
-            {updateHook.loading && (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            )}
-            Lưu
+            Đóng
           </Button>
         </DialogFooter>
+
+        {/* Loading overlay */}
+        {loading && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-xl">
+            <Loader2 className="animate-spin w-6 h-6 text-sky-400" />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

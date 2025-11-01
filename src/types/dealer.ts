@@ -1,3 +1,5 @@
+import { Inventory } from "./inventory";
+
 export type DealerStatus = "active" | "inactive";
 
 export interface DealerContact {
@@ -18,9 +20,10 @@ export interface Dealer {
   status: DealerStatus;
   createdAt: string;
   updatedAt: string;
+  salesTarget?: number;
 }
 
-export interface DealerCredentials {
+export interface CreateDealerRequest {
   name: string;
   code: string;
   region: string;
@@ -30,11 +33,39 @@ export interface DealerCredentials {
   status?: DealerStatus;
 }
 
-export interface DealerListResponse {
-  items: Dealer[];
-  total: number;
-  page: number;
-  limit: number;
+export interface UpdateDealerRequest {
+  name?: string;
+  code?: string;
+  region?: string;
+  address?: string;
+  contacts?: DealerContact[];
+  creditLimit?: number;
+  status?: DealerStatus;
 }
 
-export interface DealerResponse extends Dealer {}
+export interface TargetDealerRequest {
+  salesTarget: number;
+}
+
+export interface TargerDealerResponse {
+  message: string;
+  data: DealerResponse;
+}
+
+export interface DealerListResponse {
+  success: boolean;
+  count: number;
+  data: Dealer[];
+}
+
+export interface DealerResponse extends Dealer {
+  salesTarget?: number;
+}
+
+export interface DealerListInventory {
+  success: boolean;
+  count: number;
+  data: DealerInventory[];
+}
+
+export type DealerInventory = Inventory;

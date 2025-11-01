@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 // Import các component đã được chỉnh sửa Dark Theme
 import { CustomerTable } from "@/components/customers/CustomerTable";
 import { TestDriveSchedule } from "@/components/testDrives/TestDriveSchedule";
-import { FeedbackComplaintTable } from "@/components/dealer/FeedbackComplaintTable";
+// import { FeedbackComplaintTable } from "@/components/dealer/FeedbackComplaintTable";
 
 export default function CustomerPage() {
   return (
@@ -62,7 +62,7 @@ export default function CustomerPage() {
           <h2 className="text-xl font-semibold mb-4 text-gray-200">
             Quản lý Phản hồi và Khiếu nại
           </h2>
-          <FeedbackComplaintTable />
+          {/* <FeedbackComplaintTable /> */}
         </TabsContent>
       </Tabs>
     </div>

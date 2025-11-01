@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { User } from "@/types/users";
+import { User, UpdateUserRequest } from "@/types/users";
 import { useUsers } from "@/hooks/useUsers";
 import { toast } from "sonner";
 import {
@@ -37,36 +37,65 @@ export const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
 }) => {
   const { updateUser, dealers } = useUsers();
 
-  const [name, setName] = useState(user.profile.name);
-  const [email, setEmail] = useState(user.email);
-  const [role, setRole] = useState<User["role"]>(user.role);
-  const [status, setStatus] = useState<User["status"]>(user.status);
-  const [dealerId, setDealerId] = useState<string | undefined>(
-    user.dealer?._id
-  );
+  const [formData, setFormData] = useState<UpdateUserRequest>({
+    profile: { name: user.profile.name, phone: user.profile.phone },
+    role: user.role,
+    status: user.status,
+    dealer: user.dealer,
+  });
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setName(user.profile.name);
-    setEmail(user.email);
-    setRole(user.role);
-    setStatus(user.status);
-    setDealerId(user.dealer?._id);
+    setFormData({
+      profile: { name: user.profile.name, phone: user.profile.phone },
+      role: user.role,
+      status: user.status,
+      dealer: user.dealer,
+    });
   }, [user]);
+
+  const handleChange = (
+    key: "role" | "status" | "dealerId" | "name" | "phone",
+    value: any
+  ) => {
+    if (key === "dealerId") {
+      const selectedDealer = dealers.find((d) => d._id === value);
+      setFormData((prev) => ({ ...prev, dealer: selectedDealer }));
+    } else if (key === "role" || key === "status") {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    } else if (key === "name" || key === "phone") {
+      setFormData((prev) => ({
+        ...prev,
+        profile: { ...prev.profile, [key]: value },
+      }));
+    }
+  };
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const selectedDealer = dealers.find((d) => d._id === dealerId);
+      // Tạo payload mới chỉ gồm các field thay đổi hoặc giữ nguyên dữ liệu cũ có giá trị
+      const updatedPayload: UpdateUserRequest = {
+        profile: {
+          name:
+            formData.profile.name !== user.profile.name
+              ? formData.profile.name
+              : user.profile.name,
+          phone:
+            formData.profile.phone !== user.profile.phone
+              ? formData.profile.phone
+              : user.profile.phone,
+        },
+        role: formData.role || user.role,
+        status: formData.status || user.status,
+        dealer:
+          formData.role === "Admin" || formData.role === "EVMStaff"
+            ? undefined // admin/EVMStaff không cần dealer
+            : formData.dealer || user.dealer,
+      };
 
-      await updateUser(user._id, {
-        profile: { name },
-        email,
-        role,
-        status,
-        dealer: selectedDealer, // Dealer | undefined
-      });
-
+      await updateUser(user._id, updatedPayload);
       toast.success("Cập nhật người dùng thành công!");
       onUpdated?.();
       onClose();
@@ -76,6 +105,8 @@ export const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
       setLoading(false);
     }
   };
+
+  const { profile, role, status, dealer } = formData;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -90,22 +121,21 @@ export const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
             <Label htmlFor="name">Tên</Label>
             <Input
               id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={profile.name}
+              onChange={(e) => handleChange("name", e.target.value)}
               placeholder="Nhập tên người dùng"
               className="bg-gray-800 text-gray-100 border-gray-700 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
-          {/* Email */}
+          {/* Phone */}
           <div className="grid gap-1">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="phone">Số điện thoại</Label>
             <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Nhập email"
+              id="phone"
+              value={profile.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+              placeholder="Nhập số điện thoại"
               className="bg-gray-800 text-gray-100 border-gray-700 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
@@ -115,7 +145,7 @@ export const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
             <Label htmlFor="role">Vai trò</Label>
             <Select
               value={role}
-              onValueChange={(v) => setRole(v as User["role"])}
+              onValueChange={(v) => handleChange("role", v as User["role"])}
             >
               <SelectTrigger
                 id="role"
@@ -125,23 +155,26 @@ export const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
               </SelectTrigger>
               <SelectContent className="bg-gray-800 text-gray-100">
                 <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="EVMStaff">EVMStaff</SelectItem>
-                <SelectItem value="DealerManager">DealerManager</SelectItem>
-                <SelectItem value="DealerStaff">DealerStaff</SelectItem>
+                <SelectItem value="EVMStaff">EVM Staff</SelectItem>
+                <SelectItem value="DealerManager">Dealer Manager</SelectItem>
+                <SelectItem value="DealerStaff">Dealer Staff</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Dealer select only for DealerManager/DealerStaff */}
+          {/* Dealer select chỉ hiện khi role là DealerManager/DealerStaff */}
           {(role === "DealerManager" || role === "DealerStaff") && (
             <div className="grid gap-1">
-              <Label htmlFor="dealer">Dealer</Label>
-              <Select value={dealerId} onValueChange={(v) => setDealerId(v)}>
+              <Label htmlFor="dealer">Đại lý</Label>
+              <Select
+                value={dealer?._id}
+                onValueChange={(v) => handleChange("dealerId", v)}
+              >
                 <SelectTrigger
                   id="dealer"
                   className="bg-gray-800 text-gray-100 border-gray-700"
                 >
-                  <SelectValue placeholder="Chọn Dealer" />
+                  <SelectValue placeholder="Chọn đại lý" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 text-gray-100">
                   {dealers.map((d) => (
@@ -159,7 +192,7 @@ export const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
             <Label htmlFor="status">Trạng thái</Label>
             <Select
               value={status}
-              onValueChange={(v) => setStatus(v as User["status"])}
+              onValueChange={(v) => handleChange("status", v as User["status"])}
             >
               <SelectTrigger
                 id="status"
@@ -176,7 +209,12 @@ export const UpdateUserModal: React.FC<UpdateUserModalProps> = ({
         </div>
 
         <DialogFooter className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+          <Button
+            className="text-gray-600"
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+          >
             Hủy
           </Button>
           <Button

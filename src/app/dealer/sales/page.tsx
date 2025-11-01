@@ -7,7 +7,6 @@ import { useState } from "react";
 import { OrderTable } from "@/components/order/SalesOrderTable";
 import { QuoteTable } from "@/components/quotes/QuoteTable";
 import { PaymentTable } from "@/components/payments/PaymentTable";
-import { CreateSalesModal } from "../../../components/dealer/CreateSalesModal";
 
 export default function SalesPage() {
   const [openModal, setOpenModal] = useState(false);
@@ -63,9 +62,6 @@ export default function SalesPage() {
           <PaymentTable />
         </TabsContent>
       </Tabs>
-
-      {/* Modal tạo mới */}
-      <CreateSalesModal open={openModal} onClose={() => setOpenModal(false)} />
     </div>
   );
 }

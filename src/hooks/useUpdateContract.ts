@@ -1,12 +1,14 @@
-// src/hooks/useUpdateContract.ts
+"use client";
+
 import { useState, useEffect } from "react";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 import { contractService } from "@/services/contracts/contractService";
 import type {
   Contract,
   ContractStatus,
   UpdateContractRequest,
 } from "@/types/contracts";
+import { updateContractSchema } from "@/validations/contractSchema";
 
 /**
  * Hook quản lý cập nhật Contract
@@ -17,15 +19,9 @@ export const useUpdateContract = (initialContract: Contract) => {
   const [formData, setFormData] = useState<{
     targets: string;
     status: ContractStatus;
-    signedDate?: string;
-    terms: string;
-    files: string[];
   }>({
-    targets: initialContract.terms || "",
+    targets: initialContract.targets || "",
     status: initialContract.status,
-    signedDate: initialContract.signedDate,
-    terms: initialContract.terms,
-    files: initialContract.files || [],
   });
 
   const [loading, setLoading] = useState(false);
@@ -33,11 +29,8 @@ export const useUpdateContract = (initialContract: Contract) => {
   /** Đồng bộ dữ liệu khi initialContract thay đổi */
   useEffect(() => {
     setFormData({
-      targets: initialContract.terms || "",
+      targets: initialContract.targets || "",
       status: initialContract.status,
-      signedDate: initialContract.signedDate,
-      terms: initialContract.terms,
-      files: initialContract.files || [],
     });
   }, [initialContract]);
 
@@ -54,30 +47,33 @@ export const useUpdateContract = (initialContract: Contract) => {
     const payload: UpdateContractRequest = {
       targets: formData.targets,
       status: formData.status,
-      terms: formData.terms,
-      files: formData.files,
     };
-
-    if (formData.signedDate) payload.signedDate = formData.signedDate;
-
     return payload;
   };
 
   /** Gửi request cập nhật Contract */
-  const handleUpdate = async (onUpdated: () => void, onClose: () => void) => {
+  const handleUpdate = async (onUpdated?: () => void, onClose?: () => void) => {
     try {
       setLoading(true);
+
+      // Validate form trước khi submit
+      await updateContractSchema.validate(formData, { abortEarly: false });
+
       const payload = getUpdatePayload();
       await contractService.updateContract(initialContract._id, payload);
 
-      Swal.fire("Thành công", "Cập nhật contract thành công!", "success");
-
+      toast.success("Cập nhật hợp đồng thành công!");
       setEditMode(false);
-      onUpdated();
-      onClose();
+      onUpdated?.();
+      onClose?.();
     } catch (err: any) {
-      console.error(err);
-      Swal.fire("Lỗi", err?.message || "Không thể cập nhật contract", "error");
+      if (err.inner && Array.isArray(err.inner)) {
+        // Nếu là validation error
+        err.inner.forEach((e: any) => toast.warning(e.message));
+      } else {
+        console.error("❌ Error updating contract:", err);
+        toast.error(err?.message || "Không thể cập nhật hợp đồng");
+      }
     } finally {
       setLoading(false);
     }
@@ -87,11 +83,8 @@ export const useUpdateContract = (initialContract: Contract) => {
   const cancelEdit = () => {
     setEditMode(false);
     setFormData({
-      targets: initialContract.terms || "",
+      targets: initialContract.targets || "",
       status: initialContract.status,
-      signedDate: initialContract.signedDate,
-      terms: initialContract.terms,
-      files: initialContract.files || [],
     });
   };
 

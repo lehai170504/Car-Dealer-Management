@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { User } from "@/types/users";
+import { UpdateUserRequest, User } from "@/types/users";
 import { userService } from "@/services/users/userService";
 import { updateUserSchema } from "@/validations/userSchema";
 import { useDealers } from "./useDealers";
@@ -10,8 +10,8 @@ export const useUsers = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // lấy dealers từ hook
-  const { dealers } = useDealers();
+  // ✅ Lấy dealers và trạng thái từ useDealers
+  const { dealers, fetchDealers, loading: dealersLoading } = useDealers();
 
   /** 🟦 Lấy danh sách users */
   const fetchUsers = useCallback(async () => {
@@ -28,26 +28,29 @@ export const useUsers = () => {
   }, []);
 
   /** 🟦 Cập nhật user với validate */
-  const updateUser = useCallback(async (id: string, payload: Partial<User>) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await updateUserSchema.validate(payload, { abortEarly: false });
-      const updatedUser = await userService.updateUser(id, payload);
-      setUsers((prev) => prev.map((u) => (u._id === id ? updatedUser : u)));
-      return updatedUser;
-    } catch (err: any) {
-      if (err.name === "ValidationError") {
-        const messages = err.errors.join(", ");
-        setError(messages);
-        throw new Error(messages);
+  const updateUser = useCallback(
+    async (id: string, payload: Partial<UpdateUserRequest>) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await updateUserSchema.validate(payload, { abortEarly: false });
+        const updatedUser = await userService.updateUser(id, payload);
+        setUsers((prev) => prev.map((u) => (u._id === id ? updatedUser : u)));
+        return updatedUser;
+      } catch (err: any) {
+        if (err.name === "ValidationError") {
+          const messages = err.errors.join(", ");
+          setError(messages);
+          throw new Error(messages);
+        }
+        setError(err?.message || "Cập nhật thông tin người dùng thất bại");
+        throw err;
+      } finally {
+        setLoading(false);
       }
-      setError(err?.message || "Cập nhật thông tin người dùng thất bại");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   /** 🟦 Xóa user */
   const deleteUser = useCallback(async (id: string) => {
@@ -76,15 +79,17 @@ export const useUsers = () => {
     );
   }, [users, search]);
 
+  /** 🟩 Gọi API users + dealers khi mount */
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchDealers();
+  }, [fetchUsers, fetchDealers]);
 
   return {
     users,
     filteredUsers,
-    dealers, // trả về danh sách dealer cho modal dùng
-    loading,
+    dealers,
+    loading: loading || dealersLoading,
     error,
     search,
     setSearch,

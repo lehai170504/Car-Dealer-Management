@@ -28,7 +28,7 @@ export interface LoginResponse {
 export interface RegisterCredentials {
   email: string;
   password: string;
-  role: "Admin" | "DealerManager" | "DealerStaff";
+  role: "Admin" | "DealerManager" | "DealerStaff" | "EVMStaff";
   dealer?: Dealer; // optional vì Admin có thể không thuộc dealer
   profile: {
     name: string;

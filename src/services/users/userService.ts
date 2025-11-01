@@ -1,6 +1,6 @@
 // src/services/userService.ts
 import axiosInstance from "@/utils/axiosInstance";
-import { User } from "@/types/users";
+import { UpdateUserRequest, User } from "@/types/users";
 
 const endpoint = "/users";
 
@@ -19,7 +19,10 @@ export const userService = {
   },
 
   /** 🟦 Cập nhật thông tin user */
-  updateUser: async (id: string, payload: Partial<User>): Promise<User> => {
+  updateUser: async (
+    id: string,
+    payload: Partial<UpdateUserRequest>
+  ): Promise<User> => {
     try {
       const res = await axiosInstance.put<{ data: User }>(
         `${endpoint}/${id}`,

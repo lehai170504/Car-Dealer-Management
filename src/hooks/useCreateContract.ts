@@ -1,25 +1,28 @@
-// src/hooks/useCreateContract.ts
 import { useState } from "react";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 import { contractService } from "@/services/contracts/contractService";
 import type { CreateContractRequest, ContractStatus } from "@/types/contracts";
+import type { Dealer } from "@/types/dealer";
+import { useDealers } from "./useDealers";
+import { createContractSchema } from "@/validations/contractSchema";
 
 /**
  * Hook quản lý form tạo mới Contract
  */
 export const useCreateContract = () => {
-  const [dealer, setDealer] = useState(""); // ID đại lý
-  const [startDate, setStartDate] = useState(""); // YYYY-MM-DD
-  const [endDate, setEndDate] = useState(""); // YYYY-MM-DD
-  const [targets, setTargets] = useState(""); // Mục tiêu hợp đồng
-  const [discountPolicyRef, setDiscountPolicyRef] = useState(""); // ID chính sách giảm giá
+  const { dealers, loading: dealersLoading } = useDealers();
+
+  const [dealer, setDealer] = useState<Dealer | null>(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [targets, setTargets] = useState("");
+  const [discountPolicyRef, setDiscountPolicyRef] = useState("");
   const [status, setStatus] = useState<ContractStatus>("active");
 
   const [loading, setLoading] = useState(false);
 
-  // Reset form
   const resetForm = () => {
-    setDealer("");
+    setDealer(null);
     setStartDate("");
     setEndDate("");
     setTargets("");
@@ -27,43 +30,45 @@ export const useCreateContract = () => {
     setStatus("active");
   };
 
-  // Submit form tạo contract
-  const handleSubmit = async (onSuccess: () => void, onClose: () => void) => {
-    // Validation cơ bản
-    if (!dealer || !startDate || !endDate || !targets || !discountPolicyRef) {
-      Swal.fire(
-        "Thiếu thông tin",
-        "Vui lòng nhập đầy đủ đại lý, ngày bắt đầu/kết thúc, mục tiêu và chính sách giảm giá!",
-        "warning"
-      );
+  const handleSubmit = async (onSuccess?: () => void, onClose?: () => void) => {
+    // Trước khi tạo payload, kiểm tra dealer đã chọn
+    if (!dealer) {
+      toast.warning("Vui lòng chọn đại lý hợp đồng!");
+      return;
+    }
+
+    const payload: CreateContractRequest = {
+      dealer,
+      startDate,
+      endDate,
+      targets,
+      discountPolicyRef,
+      status,
+    };
+
+    // Validate payload
+    try {
+      await createContractSchema.validate(payload, { abortEarly: false });
+    } catch (err: any) {
+      if (err.inner && Array.isArray(err.inner)) {
+        err.inner.forEach((e: any) => toast.warning(e.message));
+      } else {
+        toast.warning(err.message || "Dữ liệu không hợp lệ");
+      }
       return;
     }
 
     try {
       setLoading(true);
-
-      const payload: CreateContractRequest = {
-        dealer,
-        startDate,
-        endDate,
-        targets,
-        discountPolicyRef,
-        status,
-      };
-
       await contractService.createContract(payload);
-
-      Swal.fire("Thành công!", "Đã tạo contract mới.", "success");
-
+      toast.success("Đã tạo hợp đồng mới thành công!");
       resetForm();
-      onClose();
-      onSuccess();
+      onClose?.();
+      onSuccess?.();
     } catch (error: any) {
       console.error("❌ Error creating contract:", error);
-      Swal.fire(
-        "Lỗi",
-        error?.message || "Không thể tạo contract. Vui lòng thử lại.",
-        "error"
+      toast.error(
+        error?.message || "Không thể tạo hợp đồng. Vui lòng thử lại."
       );
     } finally {
       setLoading(false);
@@ -84,6 +89,8 @@ export const useCreateContract = () => {
     status,
     setStatus,
     loading,
+    dealers,
+    dealersLoading,
     handleSubmit,
     resetForm,
   };

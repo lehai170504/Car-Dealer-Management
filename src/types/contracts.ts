@@ -1,3 +1,5 @@
+import { Dealer } from "./dealer";
+
 // Trạng thái contract
 export type ContractStatus = "draft" | "active" | "signed" | "cancelled";
 
@@ -13,22 +15,15 @@ export interface Contract {
   __v: number;
   createdAt: string;
   updatedAt: string;
-}
-
-// Response khi lấy danh sách contract
-export interface ContractListResponse {
-  items: Contract[];
-  total: number;
-  page: number;
-  limit: number;
+  targets: string;
 }
 
 // Response khi lấy chi tiết contract
-export interface ContractResponse extends Contract {}
+export type ContractResponse = Contract;
 
 /* ✅ Request body khi tạo mới Contract */
 export interface CreateContractRequest {
-  dealer: string; // ID đại lý
+  dealer: Dealer; // ID đại lý
   startDate: string; // ISO string hoặc "YYYY-MM-DD"
   endDate: string; // ISO string hoặc "YYYY-MM-DD"
   targets: string; // mục tiêu hợp đồng
@@ -40,7 +35,4 @@ export interface CreateContractRequest {
 export interface UpdateContractRequest {
   targets?: string;
   status?: ContractStatus;
-  signedDate?: string; // tùy chỉnh nếu muốn cập nhật ngày ký
-  terms?: string;
-  files?: string[];
 }

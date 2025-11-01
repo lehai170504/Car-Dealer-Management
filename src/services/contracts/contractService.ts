@@ -2,7 +2,7 @@
 import axiosInstance from "@/utils/axiosInstance";
 import {
   Contract,
-  ContractListResponse,
+  ContractResponse,
   CreateContractRequest,
   UpdateContractRequest,
 } from "@/types/contracts";
@@ -10,24 +10,11 @@ import {
 const endpoint = "/contracts";
 
 export const contractService = {
-  /** 🟦 Lấy danh sách contracts */
-  getAllContracts: async (params?: {
-    page?: number;
-    limit?: number;
-  }): Promise<ContractListResponse> => {
+  /** 🟦 Lấy tất cả contracts (không phân trang) */
+  getAllContracts: async (): Promise<Contract[]> => {
     try {
-      const res = await axiosInstance.get<ContractListResponse>(endpoint, {
-        params,
-      });
-
-      // Đảm bảo dữ liệu trả về luôn có cấu trúc đầy đủ
-      const data = res.data || {};
-      return {
-        items: data.items || [],
-        total: data.total ?? 0,
-        page: data.page ?? params?.page ?? 1,
-        limit: data.limit ?? params?.limit ?? 10,
-      };
+      const res = await axiosInstance.get<Contract[]>(endpoint);
+      return res.data || [];
     } catch (error: any) {
       console.error("❌ Error fetching contracts:", error);
       throw new Error(
@@ -37,9 +24,11 @@ export const contractService = {
   },
 
   /** 🟩 Lấy chi tiết contract theo ID */
-  getContractById: async (id: string): Promise<Contract> => {
+  getContractById: async (id: string): Promise<ContractResponse> => {
     try {
-      const res = await axiosInstance.get<Contract>(`${endpoint}/${id}`);
+      const res = await axiosInstance.get<ContractResponse>(
+        `${endpoint}/${id}`
+      );
       return res.data;
     } catch (error: any) {
       console.error(`❌ Error fetching contract ID ${id}:`, error);
@@ -50,9 +39,11 @@ export const contractService = {
   },
 
   /** 🟢 Tạo contract mới */
-  createContract: async (payload: CreateContractRequest): Promise<Contract> => {
+  createContract: async (
+    payload: CreateContractRequest
+  ): Promise<ContractResponse> => {
     try {
-      const res = await axiosInstance.post<Contract>(endpoint, payload);
+      const res = await axiosInstance.post<ContractResponse>(endpoint, payload);
       return res.data;
     } catch (error: any) {
       console.error("❌ Error creating contract:", error);
@@ -66,9 +57,9 @@ export const contractService = {
   updateContract: async (
     id: string,
     payload: UpdateContractRequest
-  ): Promise<Contract> => {
+  ): Promise<ContractResponse> => {
     try {
-      const res = await axiosInstance.patch<Contract>(
+      const res = await axiosInstance.patch<ContractResponse>(
         `${endpoint}/${id}`,
         payload
       );

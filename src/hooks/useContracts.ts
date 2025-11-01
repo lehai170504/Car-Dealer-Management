@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Contract } from "@/types/contracts";
 import { contractService } from "@/services/contracts/contractService";
-import Swal from "sweetalert2";
+import { toast } from "sonner";
 
 interface UseContractsResult {
   contracts: Contract[];
@@ -14,17 +14,12 @@ interface UseContractsResult {
   search: string;
   setSearch: (s: string) => void;
 
-  page: number;
-  setPage: (p: number) => void;
-  limit: number;
-  total: number;
-
-  fetchContracts: (page?: number) => Promise<void>;
+  fetchContracts: () => Promise<void>;
   fetchContractById: (id: string) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
 }
 
-/** 🧩 Hook quản lý danh sách & chi tiết Contracts (phân trang + CRUD) */
+/** 🧩 Hook quản lý danh sách & chi tiết Contracts (không phân trang) */
 export const useContracts = (): UseContractsResult => {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(
@@ -34,39 +29,21 @@ export const useContracts = (): UseContractsResult => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // Pagination
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-
-  /** 🔵 Lấy danh sách contracts (phân trang) */
-  const fetchContracts = useCallback(
-    async (pageNumber: number = page) => {
-      try {
-        setLoading(true);
-
-        const res = await contractService.getAllContracts({
-          page: pageNumber,
-          limit,
-        });
-
-        setContracts(res.items ?? []);
-        setTotal(res.total ?? 0);
-
-        // Cập nhật từ BE nếu có
-        if (typeof res.page === "number") setPage(res.page);
-        if (typeof res.limit === "number") setLimit(res.limit);
-
-        setError(null);
-      } catch (err: any) {
-        console.error("❌ Lỗi khi tải danh sách contracts:", err);
-        setError(err?.message || "Không thể tải danh sách contracts.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [page, limit]
-  );
+  /** 🔵 Lấy tất cả contracts */
+  const fetchContracts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await contractService.getAllContracts();
+      setContracts(data || []);
+      setError(null);
+    } catch (err: any) {
+      console.error("❌ Lỗi khi tải danh sách contracts:", err);
+      setError(err?.message || "Không thể tải danh sách contracts.");
+      toast.error(err?.message || "Không thể tải danh sách contracts.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   /** 🟢 Lấy chi tiết contract theo ID */
   const fetchContractById = useCallback(async (id: string) => {
@@ -78,6 +55,7 @@ export const useContracts = (): UseContractsResult => {
     } catch (err: any) {
       console.error(`❌ Lỗi khi lấy contract ID ${id}:`, err);
       setError(err?.message || "Không thể tải thông tin contract.");
+      toast.error(err?.message || "Không thể tải thông tin contract.");
     } finally {
       setLoading(false);
     }
@@ -86,31 +64,25 @@ export const useContracts = (): UseContractsResult => {
   /** 🔴 Xóa contract */
   const handleDelete = useCallback(
     async (id: string) => {
-      const confirm = await Swal.fire({
-        title: "Xóa contract?",
-        text: "Hành động này không thể hoàn tác!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Xóa",
-        cancelButtonText: "Hủy",
-        confirmButtonColor: "#dc2626",
-      });
-
-      if (!confirm.isConfirmed) return;
+      // Confirm bằng window.confirm đơn giản với sonner
+      const confirmed = window.confirm(
+        "Xóa contract? Hành động này không thể hoàn tác!"
+      );
+      if (!confirmed) return;
 
       try {
         setLoading(true);
         await contractService.deleteContract(id);
-        Swal.fire("Đã xóa!", "Contract đã bị xóa thành công.", "success");
-        await fetchContracts(page);
+        toast.success("Contract đã bị xóa thành công.");
+        await fetchContracts();
       } catch (err: any) {
         console.error("❌ Lỗi khi xóa contract:", err);
-        Swal.fire("Lỗi", err?.message || "Không thể xóa contract", "error");
+        toast.error(err?.message || "Không thể xóa contract");
       } finally {
         setLoading(false);
       }
     },
-    [fetchContracts, page]
+    [fetchContracts]
   );
 
   /** 🧮 Lọc danh sách client-side */
@@ -127,8 +99,8 @@ export const useContracts = (): UseContractsResult => {
 
   /** 🪄 Gọi lần đầu */
   useEffect(() => {
-    fetchContracts(page);
-  }, [fetchContracts, page]);
+    fetchContracts();
+  }, [fetchContracts]);
 
   return {
     contracts,
@@ -138,10 +110,6 @@ export const useContracts = (): UseContractsResult => {
     error,
     search,
     setSearch,
-    page,
-    setPage,
-    limit,
-    total,
     fetchContracts,
     fetchContractById,
     handleDelete,

@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DealerTable } from "@/components/dealers/DealerList";
-import { EVM_FinanceManagement } from "@/components/evm/FinanceManagement";
+import { EVM_FinanceManagement } from "@/components/debt/DebtTable";
 import { ContractTable } from "@/components/contracts/ContractTable";
 
 export default function EVM_DealerPage() {

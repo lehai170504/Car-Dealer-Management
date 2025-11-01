@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { User } from "@/types/users";
 import { useUsers } from "@/hooks/useUsers";
 import { UpdateUserModal } from "./UpdateUserModal";
+import { CreateUserModal } from "./CreateUserModal";
 
 export function UserTable() {
   const {
@@ -30,6 +31,7 @@ export function UserTable() {
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Bảo vệ filteredUsers để không bị undefined
   const safeUsers = filteredUsers || [];
@@ -47,6 +49,7 @@ export function UserTable() {
     try {
       await deleteUser(id);
       toast.success("Người dùng đã được xóa thành công");
+      fetchUsers();
     } catch (err: any) {
       toast.error(err.message || "Xóa người dùng thất bại");
     }
@@ -68,10 +71,7 @@ export function UserTable() {
 
         <Button
           className="bg-sky-600 hover:bg-sky-700 text-white flex items-center gap-2"
-          onClick={() => {
-            setSelectedUser(null);
-            setUpdateModalOpen(true);
-          }}
+          onClick={() => setCreateModalOpen(true)}
         >
           <Plus className="h-4 w-4" /> Thêm Người Dùng
         </Button>
@@ -169,6 +169,15 @@ export function UserTable() {
           </Table>
         )}
       </div>
+
+      {/* Create User Modal */}
+      {createModalOpen && (
+        <CreateUserModal
+          isOpen={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          onCreated={fetchUsers}
+        />
+      )}
 
       {/* Update User Modal */}
       {selectedUser && updateModalOpen && (

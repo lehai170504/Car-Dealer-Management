@@ -2,6 +2,7 @@ import { Dealer } from "./dealer";
 
 export interface UserProfile {
   name: string;
+  phone: string;
 }
 
 export type UserRole = "Admin" | "EVMStaff" | "DealerManager" | "DealerStaff";
@@ -21,10 +22,20 @@ export interface User {
 export interface CreateUserRequest {
   email: string;
   password: string;
-  role: "Admin" | "DealerManager" | "DealerStaff";
+  role: UserRole;
   dealer?: Dealer; // optional vì Admin có thể không thuộc dealer
   profile: {
     name: string;
     phone: string;
   };
+}
+
+export interface UpdateUserRequest {
+  role: UserRole;
+  dealer?: Dealer; // optional vì Admin có thể không thuộc dealer
+  profile: {
+    name: string;
+    phone: string;
+  };
+  status: "active" | "inactive";
 }

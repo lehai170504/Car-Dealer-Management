@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
@@ -13,6 +13,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useUpdateDealerTarget } from "@/hooks/useUpdateDealerTarget ";
+import {
+  formatNumberWithCommas,
+  parseFormattedNumber,
+} from "@/utils/numberFormatter";
 
 interface UpdateDealerTargetModalProps {
   isOpen: boolean;
@@ -29,18 +33,27 @@ export const UpdateDealerTargetModal = ({
   initialTarget = 0,
   onUpdated,
 }: UpdateDealerTargetModalProps) => {
-  const [target, setTarget] = useState<number>(initialTarget);
+  const [target, setTarget] = useState<string>(
+    formatNumberWithCommas(initialTarget)
+  );
   const { updateTarget, isLoading } = useUpdateDealerTarget();
+
+  // Reset khi initialTarget thay đổi
+  useEffect(() => {
+    setTarget(formatNumberWithCommas(initialTarget));
+  }, [initialTarget]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (target < 0) {
+    const numericTarget = parseFormattedNumber(target);
+
+    if (numericTarget < 0) {
       toast.error("Sales target không được nhỏ hơn 0");
       return;
     }
 
     try {
-      await updateTarget(dealerId, { salesTarget: target });
+      await updateTarget(dealerId, { salesTarget: numericTarget });
       toast.success("Cập nhật target thành công!");
       onUpdated(); // callback reload dữ liệu
       onClose(); // đóng modal
@@ -65,14 +78,16 @@ export const UpdateDealerTargetModal = ({
               Sales Target (VNĐ)
             </label>
             <Input
-              type="number"
-              min={0}
+              type="text"
               value={target}
-              onChange={(e) => setTarget(Number(e.target.value))}
+              onChange={(e) => setTarget(e.target.value)}
               placeholder="Nhập sales target..."
               className="bg-gray-700 border-gray-600 text-gray-100 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-emerald-500"
               required
             />
+            <p className="text-sm text-gray-400 mt-1">
+              Bạn có thể nhập số với dấu phẩy và thập phân, ví dụ: 1,234,567.89
+            </p>
           </div>
 
           <DialogFooter className="flex justify-end space-x-2 pt-2">

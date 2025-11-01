@@ -30,14 +30,14 @@ export const useLogin = (): UseLoginResult => {
       const role = response.user.role?.trim();
       switch (role) {
         case "Admin":
-          router.push("/admin/dashboard");
+          router.push("/admin/users");
           break;
         case "DealerManager":
         case "DealerStaff":
           router.push("/dealer/dashboard");
           break;
         case "EVMStaff":
-          router.push("/evm/dashboard");
+          router.push("/evm/catalog");
           break;
         default:
           setError("Vai trò không hợp lệ. Vui lòng liên hệ quản trị viên.");

@@ -9,11 +9,9 @@ import { UserProfile } from "@/types/auth";
 
 function getPageTitle(pathname: string): string {
   if (pathname.includes("users")) return "Quản lý người dùng";
-  if (pathname.includes("inventory")) return "Quản lý hàng tồn kho";
   if (pathname.includes("settings")) return "Cấu hình hệ thống";
   if (pathname.includes("reports")) return "Báo cáo thống kê";
   if (pathname.includes("profile")) return "Hồ sơ Admin";
-  if (pathname.includes("dashboard")) return "Bảng điều khiển Admin";
   return "Admin Panel - Quản trị hệ thống";
 }
 

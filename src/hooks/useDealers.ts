@@ -98,7 +98,7 @@ export const useDealers = (): UseDealersResult => {
         toast.success("Đại lý đã bị xóa thành công.");
         await fetchDealers();
       } catch (err: any) {
-        console.error("❌ Lỗi khi xóa dealer:", err);
+        console.error("❌ Lỗi khi xóa đại lí:", err);
         toast.error(err?.message || "Không thể xóa đại lý");
       } finally {
         setLoading(false);
@@ -108,17 +108,43 @@ export const useDealers = (): UseDealersResult => {
   );
 
   /** 🟠 Toggle status dealer */
+  /** 🟠 Toggle status dealer - Optimistic Update */
   const handleToggleStatus = useCallback(
-    async (id: string, status: "active" | "inactive") => {
+    async (id: string, newStatus: "active" | "inactive") => {
       try {
         setLoading(true);
-        const payload: UpdateDealerRequest = { status };
+
+        // 🔹 Optimistic UI: cập nhật local state ngay
+        setDealers((prev) =>
+          prev.map((dealer) =>
+            dealer._id === id ? { ...dealer, status: newStatus } : dealer
+          )
+        );
+
+        const payload: UpdateDealerRequest = { status: newStatus };
         await dealerService.updateDealer(id, payload);
-        toast.success(`Dealer đã được chuyển sang trạng thái ${status}.`);
+
+        const statusLabel =
+          newStatus === "active" ? "đang hoạt động" : "ngưng hoạt động";
+        toast.success(`Đại lý đã được chuyển sang trạng thái ${statusLabel}.`);
+
+        // 🔹 Đồng bộ lại với server (tùy chọn, đảm bảo dữ liệu chính xác)
         await fetchDealers();
       } catch (err: any) {
         console.error(`❌ Lỗi khi cập nhật status dealer ID ${id}:`, err);
-        toast.error(err?.message || "Không thể cập nhật trạng thái dealer.");
+        toast.error(err?.message || "Không thể cập nhật trạng thái đại lý.");
+
+        // 🔹 Revert trạng thái cũ nếu API lỗi
+        setDealers((prev) =>
+          prev.map((dealer) =>
+            dealer._id === id
+              ? {
+                  ...dealer,
+                  status: newStatus === "active" ? "inactive" : "active",
+                }
+              : dealer
+          )
+        );
       } finally {
         setLoading(false);
       }

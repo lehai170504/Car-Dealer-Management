@@ -1,75 +1,72 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { reportService } from "@/services/reports/reportService";
-import { InventoryReportResponse, DebtReportResponse } from "@/types/reports";
-import Swal from "sweetalert2";
+import { useState, useCallback } from "react";
+import {
+  salesReportService,
+  inventoryReportService,
+  debtReportService,
+} from "@/services/reports/reportService";
+import { SalesReportResponse } from "@/types/saleReports";
+import { InventoryReportResponse } from "@/types/inventoryReport";
+import { DebtReportResponse } from "@/types/debtReport";
+import { useDealers } from "@/hooks/useDealers";
 
-interface UseReportsResult {
-  inventoryReport: InventoryReportResponse | null;
-  debtReport: DebtReportResponse | null;
+/** Common type cho hook */
+interface UseReportResult<T> {
+  data: T | null;
   loading: boolean;
   error: string | null;
-
-  fetchInventoryReport: () => Promise<void>;
-  fetchDebtReport: () => Promise<void>;
+  fetchReport: (params?: {
+    startDate?: string;
+    endDate?: string;
+    dealerId?: string; // có thể undefined → lấy từ useDealers
+  }) => Promise<void>;
 }
 
-/** 🧩 Hook quản lý báo cáo tồn kho & nợ */
-export const useReports = (): UseReportsResult => {
-  const [inventoryReport, setInventoryReport] =
+export const useReports = () => {
+  const { dealers } = useDealers(); // lấy danh sách dealers
+  const [salesData, setSalesData] = useState<SalesReportResponse | null>(null);
+  const [inventoryData, setInventoryData] =
     useState<InventoryReportResponse | null>(null);
-  const [debtReport, setDebtReport] = useState<DebtReportResponse | null>(null);
+  const [debtData, setDebtData] = useState<DebtReportResponse | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** 🔵 Lấy báo cáo tồn kho */
-  const fetchInventoryReport = useCallback(async () => {
-    try {
+  /** fetch chung cho tất cả báo cáo */
+  const fetchReport = useCallback(
+    async (params?: {
+      startDate?: string;
+      endDate?: string;
+      dealerId?: string;
+    }) => {
       setLoading(true);
-      const data = await reportService.getInventoryReport();
-      setInventoryReport(data);
       setError(null);
-    } catch (err: any) {
-      console.error("❌ Lỗi khi tải báo cáo tồn kho:", err);
-      setError(err?.message || "Không thể tải báo cáo tồn kho.");
-      Swal.fire(
-        "Lỗi",
-        err?.message || "Không thể tải báo cáo tồn kho.",
-        "error"
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  /** 🟢 Lấy báo cáo nợ */
-  const fetchDebtReport = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await reportService.getDebtReport();
-      setDebtReport(data);
-      setError(null);
-    } catch (err: any) {
-      console.error("❌ Lỗi khi tải báo cáo nợ:", err);
-      setError(err?.message || "Không thể tải báo cáo nợ.");
-      Swal.fire("Lỗi", err?.message || "Không thể tải báo cáo nợ.", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      try {
+        const dealerId = params?.dealerId ?? undefined;
 
-  /** 🪄 Tự động load inventoryReport lần đầu (tuỳ nhu cầu) */
-  useEffect(() => {
-    fetchInventoryReport();
-  }, [fetchInventoryReport]);
+        const [salesRes, inventoryRes, debtRes] = await Promise.all([
+          salesReportService.getSalesReport({ ...params, dealerId }),
+          inventoryReportService.getInventoryReport({ ...params, dealerId }),
+          debtReportService.getDebtReport({ ...params, dealerId }),
+        ]);
+
+        setSalesData(salesRes);
+        setInventoryData(inventoryRes);
+        setDebtData(debtRes);
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch reports");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [dealers] // có thể rebuild khi dealers thay đổi
+  );
 
   return {
-    inventoryReport,
-    debtReport,
-    loading,
-    error,
-    fetchInventoryReport,
-    fetchDebtReport,
+    sales: { data: salesData, loading, error, fetchReport },
+    inventory: { data: inventoryData, loading, error, fetchReport },
+    debt: { data: debtData, loading, error, fetchReport },
   };
 };

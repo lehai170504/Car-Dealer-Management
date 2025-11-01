@@ -32,7 +32,6 @@ export const useUpdateDealer = (
   >({});
   const [isUpdateLoading, setIsUpdateLoading] = useState(false);
 
-  // Reset form khi initialDealer thay đổi
   useEffect(() => {
     setFormData({
       name: initialDealer.name,
@@ -55,7 +54,6 @@ export const useUpdateDealer = (
       ...prev,
       [key]: key === "creditLimit" ? Number(value) : value,
     }));
-    // Lưu lại field thay đổi
     setChangedFields((prev) => ({
       ...prev,
       [key]: key === "creditLimit" ? Number(value) : value,
@@ -87,10 +85,22 @@ export const useUpdateDealer = (
   };
 
   const handleUpdate = async (onUpdated: () => void, onClose: () => void) => {
+    if (Object.keys(changedFields).length === 0) {
+      toast.info("Chưa có thay đổi nào để lưu.");
+      return;
+    }
+
     try {
       // Validate chỉ những field người dùng thay đổi
-      const validateData: UpdateDealerRequest = { ...changedFields };
-      await dealerSchema.validate(validateData, { abortEarly: false });
+      const validateData: Partial<UpdateDealerRequest> = { ...changedFields };
+      for (const key in validateData) {
+        try {
+          await dealerSchema.validateAt(key, validateData);
+        } catch (err: any) {
+          toast.warning(err.message);
+          return;
+        }
+      }
 
       setIsUpdateLoading(true);
       await dealerService.updateDealer(initialDealer._id, validateData);
@@ -101,12 +111,8 @@ export const useUpdateDealer = (
       onUpdated();
       onClose();
     } catch (err: any) {
-      if (err.name === "ValidationError") {
-        err.inner.forEach((e: any) => toast.warning(e.message));
-      } else {
-        console.error(err);
-        toast.error(err?.message || "Không thể cập nhật Dealer");
-      }
+      console.error(err);
+      toast.error(err?.message || "Không thể cập nhật đại lý");
     } finally {
       setIsUpdateLoading(false);
     }

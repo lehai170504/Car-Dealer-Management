@@ -1,15 +1,44 @@
-// src/services/reports/reportService.ts
+// src/services/salesReport/salesReportService.ts
 import axiosInstance from "@/utils/axiosInstance";
-import { InventoryReportResponse, DebtReportResponse } from "@/types/reports";
+import { SalesReportResponse } from "@/types/saleReports";
+import { InventoryReportResponse } from "@/types/inventoryReport";
+import { DebtReportResponse } from "@/types/debtReport";
 
-const baseEndpoint = "/reports";
+const endpoint = "/reports";
 
-export const reportService = {
-  /** Lấy báo cáo tồn kho */
-  getInventoryReport: async (): Promise<InventoryReportResponse> => {
+export const salesReportService = {
+  /** 🟦 Lấy báo cáo doanh số */
+  getSalesReport: async (params?: {
+    startDate?: string;
+    endDate?: string;
+    dealerId?: string;
+  }): Promise<SalesReportResponse> => {
+    try {
+      const res = await axiosInstance.get<SalesReportResponse>(
+        `${endpoint}/sales`,
+        { params }
+      );
+      return res.data;
+    } catch (error: any) {
+      console.error("❌ Error fetching sales report:", error);
+      throw new Error(
+        error.response?.data?.message || "Failed to fetch sales report"
+      );
+    }
+  },
+};
+
+export const inventoryReportService = {
+  /** 🟦 Lấy báo cáo tồn kho */
+  getInventoryReport: async (params?: {
+    startDate?: string;
+    endDate?: string;
+    dealerId?: string;
+  }): Promise<InventoryReportResponse> => {
     try {
       const res = await axiosInstance.get<InventoryReportResponse>(
-        `${baseEndpoint}/inventory`
+        `${endpoint}/inventory`,
+        { params }
       );
       return res.data;
     } catch (error: any) {
@@ -19,12 +48,19 @@ export const reportService = {
       );
     }
   },
+};
 
-  /** Lấy báo cáo nợ */
-  getDebtReport: async (): Promise<DebtReportResponse> => {
+export const debtReportService = {
+  /** 🟦 Lấy báo cáo nợ của các đại lý */
+  getDebtReport: async (params?: {
+    startDate?: string;
+    endDate?: string;
+    dealerId?: string;
+  }): Promise<DebtReportResponse> => {
     try {
       const res = await axiosInstance.get<DebtReportResponse>(
-        `${baseEndpoint}/debt`
+        `${endpoint}/debt`,
+        { params }
       );
       return res.data;
     } catch (error: any) {

@@ -176,7 +176,6 @@ export function DealerTable() {
 
                     {/* Hành động */}
                     <TableCell className="text-right flex justify-end gap-2">
-                      {/* Xem chi tiết */}
                       <Button
                         variant="outline"
                         size="icon"
@@ -189,20 +188,20 @@ export function DealerTable() {
                         <Eye className="h-4 w-4" />
                       </Button>
 
-                      {/* Xem Inventory luôn hiển thị */}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="border-gray-600 text-green-400 hover:bg-gray-700 hover:border-green-500 bg-gray-600"
-                        onClick={() => {
-                          setSelectedDealerForInventory(dealer);
-                          setInventoryModalOpen(true);
-                        }}
-                      >
-                        <Box className="h-4 w-4" />
-                      </Button>
+                      {user?.role !== "Admin" && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="border-gray-600 text-green-400 hover:bg-gray-700 hover:border-green-500 bg-gray-600"
+                          onClick={() => {
+                            setSelectedDealerForInventory(dealer);
+                            setInventoryModalOpen(true);
+                          }}
+                        >
+                          <Box className="h-4 w-4" />
+                        </Button>
+                      )}
 
-                      {/* Chỉnh target luôn hiển thị */}
                       <Button
                         variant="outline"
                         size="icon"
@@ -215,7 +214,6 @@ export function DealerTable() {
                         <Pencil className="w-4 h-4" />
                       </Button>
 
-                      {/* Xóa chỉ hiện khi có quyền */}
                       {canEdit && (
                         <Button
                           variant="outline"

@@ -16,10 +16,10 @@ export const useUpdateDealerTarget = (): UseUpdateDealerTargetResult => {
   const [error, setError] = useState<string | null>(null);
 
   const updateTarget = async (id: string, payload: TargetDealerRequest) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
+    try {
       const res: TargerDealerResponse = await dealerService.updateDealerTarget(
         id,
         payload
@@ -28,8 +28,8 @@ export const useUpdateDealerTarget = (): UseUpdateDealerTargetResult => {
       toast.success(res.message || "Cập nhật target thành công!");
     } catch (err: any) {
       console.error(err);
+      // chỉ lưu error, không toast trùng
       setError(err?.message || "Không thể cập nhật target");
-      toast.error(err?.message || "Không thể cập nhật target");
     } finally {
       setIsLoading(false);
     }

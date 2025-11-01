@@ -31,11 +31,6 @@ const SIMULATED_PATH = "/evm/dashboard";
 // ====================== MENU CHO TỪNG ROLE ======================
 const dealerManagerMenu: NavItem[] = [
   {
-    title: "Dashboard",
-    href: "/admin/dashboard",
-    icon: <BarChart className="h-4 w-4" />,
-  },
-  {
     title: "Bán hàng",
     href: "/dealer/sales",
     icon: <ShoppingCart className="h-4 w-4" />,
@@ -82,11 +77,6 @@ const dealerStaffMenu: NavItem[] = [
 
 const evmStaffMenu: NavItem[] = [
   {
-    title: "Dashboard",
-    href: "/evm/dashboard",
-    icon: <BarChart className="h-4 w-4" />,
-  },
-  {
     title: "Sản phẩm & Phân phối",
     href: "/evm/catalog",
     icon: <Car className="h-4 w-4" />,
@@ -105,29 +95,19 @@ const evmStaffMenu: NavItem[] = [
 
 const adminMenu: NavItem[] = [
   {
-    title: "Dashboard",
-    href: "/admin/dashboard",
-    icon: <BarChart className="h-4 w-4" />,
-  },
-  {
     title: "Quản lý Đại lí",
     href: "/admin/dealer",
+    icon: <Users className="h-4 w-4" />,
+  },
+  {
+    title: "Quản lý Người dùng",
+    href: "/admin/users",
     icon: <Users className="h-4 w-4" />,
   },
   {
     title: "Sản phẩm & Phân phối",
     href: "/admin/products",
     icon: <Car className="h-4 w-4" />,
-  },
-  {
-    title: "Quản lý Hàng tồn kho",
-    href: "/admin/inventory",
-    icon: <Package className="h-4 w-4" />,
-  },
-  {
-    title: "Cấu hình Hệ thống",
-    href: "/admin/settings",
-    icon: <Settings className="h-4 w-4" />,
   },
   {
     title: "Báo cáo",
